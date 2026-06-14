@@ -1,0 +1,15 @@
+<section id="pain">
+  <div class="container">
+    <div class="section-eyebrow">Current State</div>
+    <h2>Pain Points Costing You Time & Revenue</h2>
+    <div class="pain-grid">
+      {{#each painPoints}}
+      <div class="pain-card">
+        <div class="pain-cost">{{cost}}</div>
+        <h3>{{title}}</h3>
+        <p>{{description}}</p>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</section>

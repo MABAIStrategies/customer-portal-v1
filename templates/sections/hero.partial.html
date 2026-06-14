@@ -1,0 +1,13 @@
+<section id="hero">
+  <div class="container">
+    <div class="hero-kicker">PRIVATE PORTAL — {{engagement.engagementId}}</div>
+    <h1 class="hero-headline">{{company.name}}<br><span class="muted">×</span> <span class="accent">MAB AI Strategies</span></h1>
+    <p class="hero-sub">{{company.industry}} • {{company.serviceArea}} • {{pointOfContact.name}}, {{pointOfContact.title}}</p>
+    <button class="hero-cta" onclick="document.getElementById('pain').scrollIntoView({behavior:'smooth'})">Begin Assessment →</button>
+    <div class="hero-stats">
+      <div><div class="hero-stat-val">{{phases.length}}</div><div class="hero-stat-label">Phases</div></div>
+      <div><div class="hero-stat-val">{{pricing.discountTiers.length}}</div><div class="hero-stat-label">Discount Tiers</div></div>
+      <div><div class="hero-stat-val">{{integrationsEnabled.length}}</div><div class="hero-stat-label">Integrations</div></div>
+    </div>
+  </div>
+</section>
