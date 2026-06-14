@@ -1,0 +1,24 @@
+[
+  {
+    "itemId": "hubspot-audit",
+    "name": "HubSpot Health Audit",
+    "description": "Full object model review, duplicate detection, pipeline hygiene scoring.",
+    "category": "sales",
+    "roiMonthly": 1200,
+    "hoursSavedMonthly": 8,
+    "priceOneTime": 0,
+    "priceMonthly": 0,
+    "isFulcrum": true
+  },
+  {
+    "itemId": "lead-enrichment",
+    "name": "Lead Enrichment + Routing",
+    "description": "Enrich inbound leads with firmographic data and auto-route to correct pipeline.",
+    "category": "sales",
+    "roiMonthly": 1800,
+    "hoursSavedMonthly": 12,
+    "priceOneTime": 4500,
+    "priceMonthly": 0,
+    "isFulcrum": true
+  }
+]

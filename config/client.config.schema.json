@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["engagement", "company", "pointOfContact", "phases", "pricing", "auth", "payment"],
+  "properties": {
+    "engagement": {
+      "type": "object",
+      "required": ["type", "promoWindow"],
+      "properties": {
+        "engagementId": { "type": "string" },
+        "type": { "enum": ["one-off", "monthly-service", "hybrid"] },
+        "createdDate": { "type": "string", "format": "date-time" },
+        "promoWindow": {
+          "type": "object",
+          "required": ["daysFromSigning", "daysFromLastDeployment", "rule"],
+          "properties": {
+            "daysFromSigning": { "type": "integer" },
+            "daysFromLastDeployment": { "type": "integer" },
+            "rule": { "type": "string" }
+          }
+        }
+      }
+    },
+    "company": {
+      "type": "object",
+      "required": ["name", "legalEntity", "industry", "address", "website"],
+      "properties": {
+        "name": { "type": "string" },
+        "legalEntity": { "type": "string" },
+        "industry": { "type": "string" },
+        "address": {
+          "type": "object",
+          "required": ["street", "city", "state", "zip"],
+          "properties": {
+            "street": { "type": "string" },
+            "city": { "type": "string" },
+            "state": { "type": "string" },
+            "zip": { "type": "string" }
+          }
+        },
+        "website": { "type": "string", "format": "uri" },
+        "logoPath": { "type": "string" },
+        "employeeCount": { "type": "string" },
+        "serviceArea": { "type": "string" }
+      }
+    },
+    "pointOfContact": {
+      "type": "object",
+      "required": ["name", "title", "email"],
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "officePhone": { "type": "string" },
+        "preferredContactMethod": { "enum": ["email", "phone", "sms"] }
+      }
+    },
+    "currentStack": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "tool", "integrationKey"],
+        "properties": {
+          "category": { "type": "string" },
+          "tool": { "type": "string" },
+          "integrationKey": { "type": "string" }
+        }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "properties": {
+        "useMabBrand": { "type": "boolean" },
+        "clientAccentColor": { "type": "string" },
+        "designSystemOptions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phaseId", "phaseNumber", "title", "type", "items"],
+        "properties": {
+          "phaseId": { "type": "string" },
+          "phaseNumber": { "type": "integer" },
+          "title": { "type": "string" },
+          "eyebrow": { "type": "string" },
+          "type": { "type": "string" },
+          "narrative": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["itemId", "name", "description", "category", "roiMonthly", "hoursSavedMonthly", "priceOneTime", "priceMonthly", "isFulcrum"],
+              "properties": {
+                "itemId": { "type": "string" },
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "category": { "type": "string" },
+                "platforms": { "type": "array", "items": { "type": "string" } },
+                "roiMonthly": { "type": "number" },
+                "hoursSavedMonthly": { "type": "number" },
+                "priceOneTime": { "type": "number" },
+                "priceMonthly": { "type": "number" },
+                "isFulcrum": { "type": "boolean" },
+                "bundle": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "bundles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["bundleId", "name", "includes", "bundlePrice"],
+              "properties": {
+                "bundleId": { "type": "string" },
+                "name": { "type": "string" },
+                "includes": { "type": "array", "items": { "type": "string" } },
+                "bundlePrice": { "type": "number" },
+                "savingsVsAlaCarte": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "required": ["discountTiers", "currency"],
+      "properties": {
+        "discountTiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["minItems", "discountPct"],
+            "properties": {
+              "minItems": { "type": "integer" },
+              "discountPct": { "type": "number" }
+            }
+          }
+        },
+        "currency": { "type": "string" }
+      }
+    },
+    "painPoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cost", "title", "description"],
+        "properties": {
+          "cost": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "roadmap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phaseNum", "title", "weeks"],
+        "properties": {
+          "phaseNum": { "type": "string" },
+          "title": { "type": "string" },
+          "weeks": { "type": "string" },
+          "items": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "required": ["method", "allowedEmails", "sessionDurationHours"],
+      "properties": {
+        "method": { "enum": ["magic-link", "password", "sso"] },
+        "allowedEmails": { "type": "array", "items": { "type": "string", "format": "email" } },
+        "sessionDurationHours": { "type": "integer" }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "required": ["provider", "mode"],
+      "properties": {
+        "provider": { "type": "string" },
+        "mode": { "type": "string" },
+        "stripePaymentLink": { "type": "string" },
+        "collectRecurring": { "type": "boolean" }
+      }
+    },
+    "integrationsEnabled": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
