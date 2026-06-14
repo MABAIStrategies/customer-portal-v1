@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Abstracts × MAB AI Strategies — Transformation Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #0A0C10;
+  --surface: #111318;
+  --elevated: #1C2030;
+  --border: #252B3B;
+  --accent: #00D4FF;
+  --accent-dim: rgba(0,212,255,0.12);
+  --accent-glow: rgba(0,212,255,0.35);
+  --white: #E8EDF5;
+  --muted: #6B7A99;
+  --danger: #FF4D6A;
+  --danger-dim: rgba(255,77,106,0.12);
+  --success: #00E5A0;
+  --success-dim: rgba(0,229,160,0.1);
+  --gold: #F5C842;
+  --gold-dim: rgba(245,200,66,0.12);
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--void);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--void); }
+::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+#progress-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10,12,16,0.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; height: 60px;
+}
+.nav-brand { display: flex; align-items: center; gap: 12px; }
+.nav-logo-mab { font-family: var(--font-display); font-weight: 800; font-size: 14px; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-divider { width: 1px; height: 16px; background: var(--border); }
+.nav-client { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+#roi-ticker { display: flex; align-items: center; gap: 16px; }
+.ticker-block { text-align: right; }
+.ticker-label { font-family: var(--font-mono); font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; display: block; }
+.ticker-value { font-family: var(--font-mono); font-size: 15px; font-weight: 500; color: var(--accent); transition: all 0.4s ease; }
+.ticker-value.pulse { animation: tickerPulse 0.6s ease; }
+@keyframes tickerPulse { 0% { text-shadow: 0 0 0 transparent; } 40% { text-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-glow); transform: scale(1.05); } 100% { text-shadow: none; transform: scale(1); } }
+.ticker-divider { width: 1px; height: 28px; background: var(--border); }
+
+section { min-height: 100vh; padding: 100px 0 80px; position: relative; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 40px; }
+.section-eyebrow { font-family: var(--font-mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.section-eyebrow::before { content: ''; display: block; width: 24px; height: 1px; background: var(--accent); }
+
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; }
+h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 800; color: var(--white); margin-bottom: 20px; }
+h2 { font-size: clamp(26px, 3.5vw, 42px); font-weight: 700; margin-bottom: 16px; }
+h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+p { color: var(--muted); margin-bottom: 12px; }
+p.lead { font-size: 17px; color: #B0BAD0; }
+
+.hero-kicker { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-dim); border: 1px solid rgba(0,212,255,0.2); border-radius: 100px; padding: 4px 14px; font-family: var(--font-mono); font-size: 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 28px; }
+.hero-kicker::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.hero-headline { font-family: var(--font-display); font-size: clamp(40px, 6vw, 72px); font-weight: 800; line-height: 1.08; margin-bottom: 24px; }
+.hero-headline span.accent { color: var(--accent); }
+.hero-sub { font-size: 17px; color: #8A97B5; max-width: 540px; margin-bottom: 40px; line-height: 1.7; }
+.hero-cta { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: var(--void); font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: 0.04em; padding: 14px 28px; border-radius: 4px; cursor: pointer; border: none; transition: all 0.2s ease; text-decoration: none; }
+.hero-cta:hover { background: white; box-shadow: 0 0 32px var(--accent-glow); transform: translateY(-1px); }
+
+.pain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 48px; }
+.pain-card { background: var(--elevated); border: 1px solid var(--border); border-radius: 8px; padding: 28px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+.pain-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--danger); }
+.pain-card:hover { border-color: var(--danger); }
+.pain-card h3 { color: var(--white); font-size: 15px; }
+.pain-card p { font-size: 13px; margin: 0; }
+.pain-cost { font-family: var(--font-mono); font-size: 22px; font-weight: 500; color: var(--danger); margin-bottom: 6px; }
+
+.phase-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; gap: 40px; }
+.phase-number { font-family: var(--font-mono); font-size: 11px; color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(0,212,255,0.2); padding: 4px 10px; border-radius: 4px; white-space: nowrap; margin-bottom: 12px; display: inline-block; }
+
+.feature-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 32px; }
+.feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px 28px; display: flex; align-items: flex-start; gap: 20px; transition: all 0.25s ease; cursor: pointer; position: relative; }
+.feature-card:hover { border-color: var(--accent); background: var(--elevated); transform: translateX(3px); }
+.feature-card.selected { border-color: var(--accent); background: rgba(0,212,255,0.04); }
+.feature-card.selected::after { content: '✓ ADDED'; position: absolute; top: 16px; right: 20px; font-family: var(--font-mono); font-size: 9px; color: var(--success); letter-spacing: 0.12em; }
+.feature-icon { width: 40px; height: 40px; min-width: 40px; background: var(--elevated); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.feature-card.selected .feature-icon { background: var(--accent-dim); border-color: rgba(0,212,255,0.3); }
+.feature-content { flex: 1; }
+.feature-title { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--white); margin-bottom: 4px; }
+.feature-desc { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.5; }
+.feature-meta { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+.feature-roi { font-family: var(--font-mono); font-size: 12px; color: var(--success); }
+.feature-price { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+.feature-tools { font-size: 11px; color: var(--muted); background: var(--elevated); padding: 2px 8px; border-radius: 100px; }
+</style>
+</head>
+<body>
+<nav id="progress-nav">
+  <div class="nav-brand">
+    <div class="nav-logo-mab">MAB AI STRATEGIES</div>
+    <div class="nav-divider"></div>
+    <div class="nav-client">Apex Abstracts</div>
+  </div>
+  <div id="roi-ticker">
+    <div class="ticker-block">
+      <span class="ticker-label">Monthly ROI</span>
+      <span class="ticker-value" id="ticker-roi">$0</span>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-block">
+      <span class="ticker-label">Hours Saved</span>
+      <span class="ticker-value" id="ticker-hours">0</span>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-block">
+      <span class="ticker-label">Investment</span>
+      <span class="ticker-value" id="ticker-investment">$0</span>
+    </div>
+  </div>
+  <div class="nav-steps" id="nav-steps"></div>
+</nav>
+
+<section id="hero">
+  <div class="container">
+    <div class="hero-kicker">PRIVATE PORTAL — MAB-2026-001</div>
+    <h1 class="hero-headline">Apex Abstracts<br><span class="muted">×</span> <span class="accent">MAB AI Strategies</span></h1>
+    <p class="hero-sub">Legal Services • Texas • Jordan Hale, Founder &amp; CEO</p>
+    <button class="hero-cta" onclick="document.getElementById('pain').scrollIntoView({behavior:'smooth'})">Begin Assessment →</button>
+    <div class="hero-stats">
+      <div><div class="hero-stat-val">5</div><div class="hero-stat-label">Phases</div></div>
+      <div><div class="hero-stat-val">3</div><div class="hero-stat-label">Discount Tiers</div></div>
+      <div><div class="hero-stat-val">3</div><div class="hero-stat-label">Integrations</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pain">
+  <div class="container">
+    <div class="section-eyebrow">Current State</div>
+    <h2>Pain Points Costing You Time & Revenue</h2>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-cost">3-4 hrs/week</div>
+        <h3>Pipeline Leakage</h3>
+        <p>Deals fall through cracks because follow-up is manual and inconsistent.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-cost">2-3 hrs/week</div>
+        <h3>Invoice Delays</h3>
+        <p>Finance team spends hours every week manually creating and chasing invoices.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-cost">4 hrs/week</div>
+        <h3>Admin Overhead</h3>
+        <p>Repetitive data entry across CRM, email, and spreadsheets.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="phase" id="phase-1" data-phase="1">
+  <div class="container">
+    <div class="phase-header">
+      <div>
+        <div class="phase-number">PHASE 1</div>
+        <h2>Foundation Stack</h2>
+        <p class="lead">Audit of existing CRM, email, storage, and payment stack. Identify integration gaps and data hygiene issues. Produce a 90-day automation roadmap.</p>
+      </div>
+      <div class="section-eyebrow">Current Infrastructure</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card" data-item-id="hubspot-audit" data-roi="1200" data-hours="8" data-price-one="0" data-price-month="0" data-fulcrum="true">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">HubSpot Health Audit</div>
+          <p class="feature-desc">Full object model review, duplicate detection, pipeline hygiene scoring.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$1200/mo</span>
+            <span class="feature-price">$0 one-time • $0/mo</span>
+            <span class="feature-tools">hubspot</span>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card" data-item-id="google-workspace-audit" data-roi="600" data-hours="5" data-price-one="0" data-price-month="0" data-fulcrum="false">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Google Workspace Audit</div>
+          <p class="feature-desc">Shared drive structure, permission audit, calendar optimization.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$600/mo</span>
+            <span class="feature-price">$0 one-time • $0/mo</span>
+            <span class="feature-tools">google-workspace</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px">
+      <div class="section-eyebrow">Bundles</div>
+      <div class="feature-card bundle-card" data-bundle-id="foundation-bundle" data-price="0">
+        <div class="feature-content">
+          <div class="feature-title">Foundation Bundle</div>
+          <p class="feature-desc">Includes: hubspot-audit,google-workspace-audit</p>
+          <div class="feature-meta">
+            <span class="feature-price">$0 • Save $0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="phase" id="phase-2" data-phase="2">
+  <div class="container">
+    <div class="phase-header">
+      <div>
+        <div class="phase-number">PHASE 2</div>
+        <h2>Core Automations</h2>
+        <p class="lead">Deploy 6 core automations that eliminate repetitive work across sales, operations, and finance.</p>
+      </div>
+      <div class="section-eyebrow">High-ROI Workflows</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card" data-item-id="lead-enrichment" data-roi="1800" data-hours="12" data-price-one="4500" data-price-month="0" data-fulcrum="true">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Lead Enrichment + Routing</div>
+          <p class="feature-desc">Enrich inbound leads with firmographic data and auto-route to correct pipeline.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$1800/mo</span>
+            <span class="feature-price">$4500 one-time • $0/mo</span>
+            <span class="feature-tools">hubspot,apollo</span>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card" data-item-id="invoice-auto" data-roi="2200" data-hours="6" data-price-one="3200" data-price-month="0" data-fulcrum="false">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Invoice Auto-Creation</div>
+          <p class="feature-desc">Generate invoices from closed-won deals and email to client with payment link.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$2200/mo</span>
+            <span class="feature-price">$3200 one-time • $0/mo</span>
+            <span class="feature-tools">hubspot,stripe</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px">
+      <div class="section-eyebrow">Bundles</div>
+      <div class="feature-card bundle-card" data-bundle-id="automation-bundle" data-price="6500">
+        <div class="feature-content">
+          <div class="feature-title">Automation Bundle</div>
+          <p class="feature-desc">Includes: lead-enrichment,invoice-auto</p>
+          <div class="feature-meta">
+            <span class="feature-price">$6500 • Save $1200</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="phase" id="phase-3" data-phase="3">
+  <div class="container">
+    <div class="phase-header">
+      <div>
+        <div class="phase-number">PHASE 3</div>
+        <h2>Agent Flows</h2>
+        <p class="lead">Deploy 3 always-on agents that handle follow-ups, research, and reporting.</p>
+      </div>
+      <div class="section-eyebrow">Autonomous Operators</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card" data-item-id="research-agent" data-roi="950" data-hours="4" data-price-one="0" data-price-month="850" data-fulcrum="false">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Market Research Agent</div>
+          <p class="feature-desc">Weekly competitive brief + prospect research delivered to Slack.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$950/mo</span>
+            <span class="feature-price">$0 one-time • $850/mo</span>
+            <span class="feature-tools">hubspot,openai</span>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card" data-item-id="followup-agent" data-roi="1400" data-hours="9" data-price-one="0" data-price-month="950" data-fulcrum="true">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Follow-up Agent</div>
+          <p class="feature-desc">Auto-send personalized follow-ups on open deals &gt;7 days.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$1400/mo</span>
+            <span class="feature-price">$0 one-time • $950/mo</span>
+            <span class="feature-tools">hubspot,gmail</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+<section class="phase" id="phase-4" data-phase="4">
+  <div class="container">
+    <div class="phase-header">
+      <div>
+        <div class="phase-number">PHASE 4</div>
+        <h2>Website + Conversion</h2>
+        <p class="lead">Rebuild site with conversion-optimized pages, embedded proposal CTAs, and analytics.</p>
+      </div>
+      <div class="section-eyebrow">Conversion Infrastructure</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card" data-item-id="new-site" data-roi="0" data-hours="0" data-price-one="18500" data-price-month="0" data-fulcrum="true">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Conversion Website</div>
+          <p class="feature-desc">7-page site with live ROI calculator, case studies, and gated proposal access.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$0/mo</span>
+            <span class="feature-price">$18500 one-time • $0/mo</span>
+            <span class="feature-tools">webflow,analytics</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+<section class="phase" id="phase-5" data-phase="5">
+  <div class="container">
+    <div class="phase-header">
+      <div>
+        <div class="phase-number">PHASE 5</div>
+        <h2>Expansion Layer</h2>
+        <p class="lead">Optional add-ons that compound value as the business scales.</p>
+      </div>
+      <div class="section-eyebrow">Future-Proofing</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card" data-item-id="crm-migration" data-roi="0" data-hours="0" data-price-one="12500" data-price-month="0" data-fulcrum="false">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Full CRM Migration</div>
+          <p class="feature-desc">Move from legacy CRM to HubSpot with full data migration + training.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$0/mo</span>
+            <span class="feature-price">$12500 one-time • $0/mo</span>
+            <span class="feature-tools">hubspot</span>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card" data-item-id="custom-integration" data-roi="0" data-hours="0" data-price-one="9800" data-price-month="0" data-fulcrum="false">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-content">
+          <div class="feature-title">Custom Integration Build</div>
+          <p class="feature-desc">One-time build of bespoke API integration between any two tools in stack.</p>
+          <div class="feature-meta">
+            <span class="feature-roi">+$0/mo</span>
+            <span class="feature-price">$9800 one-time • $0/mo</span>
+            <span class="feature-tools">api</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section id="proposal">
+  <div class="container">
+    <div class="section-eyebrow">Final Proposal</div>
+    <h2>Live ROI Summary</h2>
+    <div id="proposal-summary"></div>
+    <button id="checkout-btn" class="hero-cta" disabled>Proceed to Checkout</button>
+    <p style="margin-top:12px;font-size:12px;color:#6B7A99">Promo window: 30 days from signing or 14 days from last deployment (whichever is later).</p>
+  </div>
+</section>
+
+<script>
+const pricingData = {"discountTiers":[{"minItems":4,"discountPct":0.15},{"minItems":8,"discountPct":0.25},{"minItems":15,"discountPct":0.4}],"currency":"USD","totalPotentialRoi":8150,"promoWindow":{"daysFromSigning":30,"daysFromLastDeployment":14,"rule":"whichever is later"}};
+const selected = new Set();
+let currentDiscount = 0;
+
+// ROI ticker logic (simplified live version)
+function updateTicker() {
+  let roi = 0, hours = 0, investment = 0;
+  document.querySelectorAll('.feature-card.selected').forEach(card => {
+    roi += parseFloat(card.dataset.roi) || 0;
+    hours += parseFloat(card.dataset.hours) || 0;
+    investment += parseFloat(card.dataset.priceOne) || 0;
+    investment += parseFloat(card.dataset.priceMonth) || 0;
+  });
+  const discount = pricingData.discountTiers.find(t => selected.size >= t.minItems)?.discountPct || 0;
+  investment = Math.round(investment * (1 - discount));
+
+  document.getElementById('ticker-roi').textContent = '$' + roi;
+  document.getElementById('ticker-hours').textContent = hours;
+  document.getElementById('ticker-investment').textContent = '$' + investment;
+}
+
+document.querySelectorAll('.feature-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const id = card.dataset.itemId;
+    if (selected.has(id)) {
+      selected.delete(id);
+      card.classList.remove('selected');
+    } else {
+      selected.add(id);
+      card.classList.add('selected');
+    }
+    updateTicker();
+    document.getElementById('checkout-btn').disabled = selected.size === 0;
+  });
+});
+
+document.getElementById('checkout-btn').addEventListener('click', () => {
+  const total = parseInt(document.getElementById('ticker-investment').textContent.replace('$',''));
+  alert('Checkout would open Stripe for $' + total + ' (demo)');
+  // TODO: integrate real Stripe link from config
+});
+
+console.log('Portal ready — Apex Abstracts');
+</script>
+</body>
+</html>
