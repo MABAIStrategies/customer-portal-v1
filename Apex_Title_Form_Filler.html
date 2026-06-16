@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Title Form Filler</title>
+<style>
+  :root{
+    --ink:#14181f;--ink-soft:#3a4250;--line:#e2e6ea;--line-soft:#eef1f4;
+    --tool-bg:#f4f6f8;--surface:#fff;--paper:#ffffff;--paper-line:#cfcabd;
+    --brass:#8a6d3b;--brass-soft:#b9a06a;
+    --clear:#1f7a4d;--clouded:#a8791b;--resolve:#9a2f2f;--focus:#2b6cb0;
+    --sans:-apple-system,"Segoe UI","Inter",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Times New Roman",Times,"Liberation Serif",Georgia,serif;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);background:var(--tool-bg);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 20px;background:var(--ink);color:#fff;position:sticky;top:0;z-index:30;border-bottom:2px solid var(--brass)}
+  .brandmark{display:flex;align-items:center;gap:12px;min-width:0}
+  .seal{width:34px;height:34px;border:1.5px solid var(--brass-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:700;color:var(--brass-soft);flex:none}
+  .brandname{font-family:var(--serif);font-size:17px;letter-spacing:.3px;line-height:1}
+  .brandsub{font-size:10px;letter-spacing:2px;color:#9aa6b4;text-transform:uppercase;margin-top:3px}
+  .topactions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+  button{font-family:var(--sans);cursor:pointer;border-radius:6px;font-size:13px;border:1px solid transparent;padding:8px 12px;transition:background .12s,border-color .12s,color .12s}
+  button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .btn-ghost{background:transparent;color:#d7dde4;border-color:#36404d}
+  .btn-ghost:hover{background:#222b36;color:#fff}
+  .btn-primary{background:var(--brass);color:#fff;border-color:var(--brass);font-weight:600}
+  .btn-primary:hover{background:#765d31}
+  .btn-sm{padding:5px 9px;font-size:12px}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);height:calc(100vh - 59px)}
+  .pane{overflow-y:auto;height:100%}
+  .pane-form{background:var(--surface);border-right:1px solid var(--line)}
+  .pane-preview{background:#dfe2e6;padding:22px;display:flex;justify-content:center;align-items:flex-start}
+  .form-inner{padding:16px 18px 96px}
+
+  .restore{display:none;background:#fff8e6;border:1px solid #e8d79a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;align-items:center;justify-content:space-between;gap:10px}
+  .restore.show{display:flex}
+
+  fieldset.sec{border:1px solid var(--line);border-radius:10px;padding:0;margin:0 0 12px}
+  legend.sec-h{display:flex;align-items:center;gap:8px;margin-left:12px;padding:0 8px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+  .sec-num{font-family:var(--mono);color:var(--brass);font-size:11px}
+  .sec-body{padding:12px 14px 15px}
+
+  .grid{display:grid;gap:10px 12px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+  @media (max-width:560px){.g2,.g3{grid-template-columns:1fr}}
+  label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);font-weight:600}
+  .req{color:var(--resolve)}
+  input[type=text],input[type=date],select,textarea{font-family:var(--sans);font-size:13px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px 9px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px rgba(43,108,176,.12)}
+  input.mono,textarea.mono{font-family:var(--mono)}
+  textarea{resize:vertical;min-height:54px;line-height:1.5}
+  .auto-filled{background:#f3f8f3;border-color:#bfe0c8}
+  .hint{font-size:11px;color:#8a93a0;font-weight:500}
+  .radio-row{display:flex;gap:16px;flex-wrap:wrap;padding-top:2px}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);font-weight:500;cursor:pointer}
+  input[type=radio],input[type=checkbox]{accent-color:var(--brass);width:15px;height:15px;cursor:pointer}
+
+  /* import / parser */
+  fieldset.import{border-color:var(--brass-soft);background:#fcfbf8}
+  .imp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .file-btn{border:1px solid var(--line);background:#f4f6f8;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:600;color:var(--ink-soft);font-size:12px}
+  #parseArea{margin-top:12px}
+  .map-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px}
+  .map-col{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--ink-soft);font-weight:700}
+  .map-col select{padding:5px 6px;font-size:12px}
+  .map-col .sample{font-weight:500;color:#9aa3ad;font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdr-toggle{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:10px}
+  .review-wrap{border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:300px}
+  table.review{border-collapse:collapse;width:100%;font-size:11.5px}
+  table.review th{position:sticky;top:0;background:#eef0f3;text-align:left;padding:6px 7px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:#5c6571;white-space:nowrap}
+  table.review td{padding:5px 7px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  table.review td.mono{font-family:var(--mono);font-size:11px;white-space:nowrap}
+  table.review tr.exc td:not(.inc){opacity:.4}
+  table.review select{padding:3px 5px;font-size:11px;border-radius:5px}
+  .review-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .pill{font-family:var(--mono);font-size:11px;color:var(--brass);background:#f4f0e8;border:1px solid var(--brass-soft);border-radius:20px;padding:3px 10px}
+
+  /* ===== The Form (north star = uploaded DE template) ===== */
+  .sheet{width:100%;max-width:760px;background:var(--paper);color:#000;box-shadow:0 14px 34px rgba(20,24,31,.18);border:1px solid #c9c3b6;position:relative}
+  .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5}
+  .wm span{font-family:var(--sans);font-weight:800;font-size:120px;letter-spacing:8px;color:rgba(154,47,47,.06);transform:rotate(-24deg)}
+  .wm.hide{display:none}
+  .form{font-family:var(--serif);padding:54px 60px 50px;position:relative;z-index:2;font-size:13.5px;line-height:1.5;color:#111}
+  .form .doctitle{text-align:center;font-size:18px;font-weight:700;letter-spacing:.5px;margin:0 0 20px;text-transform:uppercase}
+  .form .grp{margin:0 0 16px;break-inside:avoid}
+  .form .grp-h{font-size:14px;font-weight:700;border-bottom:1px solid #000;padding-bottom:2px;margin-bottom:7px}
+  .form .ln{margin:2px 0;display:flex;gap:6px}
+  .form .ln .lbl{font-weight:700;white-space:nowrap}
+  .form .ln .v{flex:1;min-width:0}
+  .form .v.empty{color:#9a958a}
+  .cbx{font-family:var(--sans);margin-right:4px}
+  .cbopt{margin-right:22px;white-space:nowrap}
+  .chain-list{margin:4px 0 4px;padding:0;list-style:none}
+  .chain-list li{margin:3px 0;display:flex;gap:8px}
+  .chain-list li .n{font-weight:700;min-width:18px}
+  .intro{font-style:italic;font-size:12.5px;margin:2px 0 6px;color:#333}
+  .blk-v{white-space:pre-wrap;margin:1px 0 0}
+  .legal-block{white-space:pre-wrap;border:0;min-height:42px;padding-top:2px}
+  .prep-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin-top:4px}
+  .status-em{font-weight:700}
+  .s-clear{color:var(--clear)}.s-clouded{color:var(--clouded)}.s-resolve{color:var(--resolve)}
+
+  .appfoot{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:7px 16px;background:var(--ink);color:#8e99a6;font-size:11px;z-index:25}
+  .appfoot a{color:#b9a06a;text-decoration:none}
+  #exportCodeBtn{background:#2a333f;color:#cdd5de;border:1px solid #3c4654;border-radius:5px;padding:5px 10px;font-size:11px}
+  #exportCodeBtn:hover{background:#343f4d;color:#fff}
+  .toast{position:fixed;bottom:54px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;border:1px solid var(--brass);max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:880px){.layout{grid-template-columns:1fr;height:auto}.pane{height:auto;overflow:visible}.pane-form{border-right:none;border-bottom:1px solid var(--line)}.pane-preview{padding:16px}}
+
+  @media print{
+    @page{size:Letter;margin:0.6in}
+    body{background:#fff}
+    .topbar,.pane-form,.appfoot,.toast,.restore{display:none!important}
+    .layout{display:block;height:auto}
+    .pane-preview{padding:0;background:#fff;display:block;height:auto;overflow:visible}
+    .sheet{box-shadow:none;border:none;max-width:none;width:100%}
+    .form{padding:0}
+    .form .grp{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brandmark">
+    <div class="seal">A</div>
+    <div>
+      <div class="brandname">Apex Abstracts</div>
+      <div class="brandsub">Title Report — Form Filler &nbsp;·&nbsp; PA · NJ · DE</div>
+    </div>
+  </div>
+  <div class="topactions">
+    <button class="btn-ghost btn-sm" id="newBtn">New report</button>
+    <button class="btn-ghost btn-sm" id="loadBtn">Load draft</button>
+    <button class="btn-ghost btn-sm" id="saveBtn">Save draft</button>
+    <button class="btn-primary" id="printBtn">Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ============ FORM / INPUT PANE ============ -->
+  <div class="pane pane-form">
+    <div class="form-inner">
+
+      <div class="restore" id="restoreBar">
+        <span>Restored your last unsaved draft.</span>
+        <button class="btn-sm" id="discardRestore" style="border:1px solid var(--line);background:#fff">Start blank</button>
+      </div>
+
+      <!-- IMPORT / PARSER -->
+      <fieldset class="sec import">
+        <legend class="sec-h"><span class="sec-num">⤓</span> Import records &amp; auto-fill the form</legend>
+        <div class="sec-body">
+          <p class="hint" style="margin:0 0 8px">Paste the recorder grantor/grantee index results (or upload a CSV/TSV export). The parser classifies each document and composes the chain of title, mortgages, and liens into the form fields below. You confirm before it commits.</p>
+          <textarea id="pasteBox" class="mono" style="min-height:88px;font-size:12px" placeholder="Paste search-results rows here — tab, comma, or pipe separated. Keep the header row if you have one."></textarea>
+          <div class="imp-actions">
+            <button class="btn-primary btn-sm" id="parseBtn" type="button">Parse records</button>
+            <label class="file-btn">Upload CSV / TSV<input type="file" id="recFile" accept=".csv,.tsv,.txt,text/csv" style="display:none"></label>
+            <button class="btn-sm" id="demoBtn" type="button" style="border:1px solid var(--brass-soft);background:#f4f0e8;color:#765d31;font-weight:600">Load demo records</button>
+          </div>
+          <div id="parseArea"></div>
+        </div>
+      </fieldset>
+
+      <!-- PROPERTY INFORMATION -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">01</span> Property Information</legend>
+        <div class="sec-body">
+          <div class="grid g2">
+            <label class="fld">Property Address <span class="req">*</span><input type="text" id="propAddress" placeholder="941 Maple Terrace, Wilmington, DE 19801"></label>
+            <label class="fld">Order ID
+              <div style="display:flex;gap:6px">
+                <input type="text" id="orderId" class="mono" placeholder="NCC-2026-001">
+                <button class="btn-sm" id="genId" type="button" style="border:1px solid var(--line);background:#f4f6f8;white-space:nowrap">New&nbsp;ID</button>
+              </div>
+            </label>
+          </div>
+          <div class="grid g3" style="margin-top:10px">
+            <label class="fld">County<input type="text" id="county" value="New Castle County" list="counties"></label>
+            <label class="fld">State
+              <select id="state"><option>Delaware</option><option>Pennsylvania</option><option>New Jersey</option></select>
+            </label>
+            <label class="fld">Date Completed<input type="text" id="dateCompleted" placeholder="MM/DD/YYYY"></label>
+          </div>
+          <datalist id="counties"><option>New Castle County</option><option>Kent County</option><option>Sussex County</option><option>Philadelphia County</option><option>Bucks County</option><option>Montgomery County</option><option>Delaware County</option><option>Chester County</option><option>Camden County</option><option>Burlington County</option><option>Gloucester County</option></datalist>
+          <div style="margin-top:12px">
+            <label class="fld" style="margin-bottom:4px">Search Type</label>
+            <div class="radio-row">
+              <label><input type="radio" name="searchType" value="Full Title Search (40-Year)" checked> Full Title Search (40-Year)</label>
+              <label><input type="radio" name="searchType" value="Current Owner Search"> Current Owner Search</label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- VESTING -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">02</span> Current Vesting / Ownership</legend>
+        <div class="sec-body">
+          <div class="grid g2">
+            <label class="fld">Current Owner(s)<input type="text" id="owner" placeholder="auto-fills from newest deed"></label>
+            <label class="fld">Vesting Type<input type="text" id="vesting" list="vest" placeholder="Married / joint tenants / LLC / trust"></label>
+          </div>
+          <datalist id="vest"><option>Individual</option><option>Joint tenants</option><option>Tenants in common</option><option>Married</option><option>LLC</option><option>Trust</option><option>Estate</option></datalist>
+          <div class="grid g2" style="margin-top:10px">
+            <label class="fld">Deed Reference<input type="text" id="deedRef" class="mono" placeholder="Bk / Pg — auto-fills"></label>
+            <label class="fld">Recorded Date<input type="text" id="recordedDate" placeholder="MM/DD/YYYY — auto-fills"></label>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- CHAIN -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">03</span> Chain of Title Summary <span style="text-transform:none;letter-spacing:0;color:#9aa3ad">(40-Year Minimum)</span></legend>
+        <div class="sec-body">
+          <label class="fld">Ownership transfers — one per line, present → back
+            <textarea id="chainSummary" style="min-height:96px" placeholder="Auto-fills from parsed deeds. One transfer per line:&#10;1. GRANTOR → GRANTEE — Warranty Deed, 06/15/2018, Bk 44450/Pg 412"></textarea>
+          </label>
+          <label class="fld" style="margin-top:10px">Notes on gaps or breaks in chain<textarea id="chainNotes" placeholder="None found. / Gap 1998–2001 — quitclaim into family trust."></textarea></label>
+        </div>
+      </fieldset>
+
+      <!-- MORTGAGES -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">04</span> Mortgages &amp; Deeds of Trust</legend>
+        <div class="sec-body grid" style="gap:10px">
+          <label class="fld">Current Mortgages<textarea id="mortCurrent" placeholder="auto-fills from parsed open mortgages"></textarea></label>
+          <label class="fld">Satisfied Mortgages<textarea id="mortSatisfied" placeholder="auto-fills from satisfactions / releases"></textarea></label>
+          <label class="fld">Assignments / Modifications<textarea id="mortAssign" placeholder="auto-fills from assignments"></textarea></label>
+          <label class="fld">Open Balance Notes <span class="hint">(if recorded)</span><textarea id="mortBalance" placeholder="Open balance not recorded of record."></textarea></label>
+        </div>
+      </fieldset>
+
+      <!-- LIENS -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">05</span> Liens &amp; Judgments</legend>
+        <div class="sec-body grid" style="gap:10px">
+          <label class="fld">County / State Tax Liens<textarea id="lienTax" placeholder="auto-fills from tax/municipal liens"></textarea></label>
+          <label class="fld">Civil Judgments<textarea id="lienCivil" placeholder="auto-fills from judgments"></textarea></label>
+          <label class="fld">Federal Liens <span class="hint">(if applicable)</span><textarea id="lienFederal" placeholder="auto-fills from federal / IRS liens"></textarea></label>
+          <label class="fld">Status Notes<textarea id="lienNotes" placeholder="Prothonotary searched by name — no open judgments. UCC / mechanics / lis pendens noted here."></textarea></label>
+        </div>
+      </fieldset>
+
+      <!-- TAX -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">06</span> Tax Status</legend>
+        <div class="sec-body">
+          <div class="radio-row" style="margin-bottom:10px">
+            <label><input type="radio" name="taxStatus" value="Current" checked> Current</label>
+            <label><input type="radio" name="taxStatus" value="Delinquent"> Delinquent</label>
+          </div>
+          <div class="grid g2">
+            <label class="fld">Amount Owed <span class="hint">(if any)</span><input type="text" id="taxAmount" placeholder="$0.00"></label>
+            <label class="fld">Tax Year(s) Affected<input type="text" id="taxYears" placeholder="—"></label>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- EASEMENTS -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">07</span> Easements, Restrictions &amp; Encumbrances</legend>
+        <div class="sec-body grid" style="gap:10px">
+          <label class="fld">Easements<textarea id="easements" placeholder="Standard utility easement per recorded plat."></textarea></label>
+          <label class="fld">HOA / Deed Restrictions<textarea id="restrictions" placeholder="Subdivision restrictions recorded Bk 65 / Pg 46."></textarea></label>
+          <label class="fld">Other Encumbrances<textarea id="otherEnc" placeholder="None found of record."></textarea></label>
+        </div>
+      </fieldset>
+
+      <!-- LEGAL -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">08</span> Legal Description</legend>
+        <div class="sec-body">
+          <label class="fld">Full Legal Description<textarea id="legal" style="min-height:96px" placeholder="auto-suggests from the subject deed; verify against the recorded instrument"></textarea></label>
+        </div>
+      </fieldset>
+
+      <!-- OPINION -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">09</span> Title Opinion Summary</legend>
+        <div class="sec-body">
+          <label class="fld" style="margin-bottom:4px">Overall Title Status</label>
+          <div class="radio-row">
+            <label><input type="radio" name="opinion" value="Clear" checked> Clear</label>
+            <label><input type="radio" name="opinion" value="Clouded"> Clouded</label>
+            <label><input type="radio" name="opinion" value="Requires Resolution"> Requires Resolution</label>
+          </div>
+          <label class="fld" style="margin-top:12px">Summary Notes<textarea id="opinionNotes" placeholder="Marketable chain of record for the 40-year period. Open first mortgage; no judgments or tax delinquency found."></textarea></label>
+        </div>
+      </fieldset>
+
+      <!-- PREPARED BY -->
+      <fieldset class="sec">
+        <legend class="sec-h"><span class="sec-num">10</span> Prepared By</legend>
+        <div class="sec-body grid g3">
+          <label class="fld">Company<input type="text" id="company" value="Apex Abstracts LLC"></label>
+          <label class="fld">Prepared By<input type="text" id="preparedBy" placeholder="Full name"></label>
+          <label class="fld">Contact<input type="text" id="contact" placeholder="orders@apexabstracts.com"></label>
+        </div>
+      </fieldset>
+
+    </div>
+  </div>
+
+  <!-- ============ FORM OUTPUT (THE template) ============ -->
+  <div class="pane pane-preview">
+    <div class="sheet">
+      <div class="wm" id="watermark"><span>DRAFT</span></div>
+      <div class="form" id="formOut"></div>
+    </div>
+  </div>
+</div>
+
+<div class="appfoot">
+  <span>Apex Title Form Filler &nbsp;·&nbsp; fills the Delaware Title Report template &nbsp;·&nbsp; offline, no login &nbsp;·&nbsp; Powered by <a href="#">MAB AI Strategies</a></span>
+  <button id="exportCodeBtn" type="button">Export code</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="loadFile" accept="application/json,.json" style="display:none">
+
+<script>
+"use strict";
+(function(){
+  const SRC = document.documentElement.outerHTML;
+  const LS_KEY="apex_form_filler_v1", SEQ_KEY="apex_title_seq";
+  const $=id=>document.getElementById(id);
+  const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const val=id=>{const e=$(id);return e?e.value.trim():"";};
+  const radio=n=>{const e=document.querySelector(`input[name="${n}"]:checked`);return e?e.value:"";};
+  let parseState=null;
+
+  // ---------- THE FORM (renders the uploaded DE template, populated) ----------
+  function box(on){return `<span class="cbx">${on?"\u25A0":"\u25A1"}</span>`;}
+  function line(label,id,raw){
+    const v = raw!=null ? raw : val(id);
+    return `<div class="ln"><span class="lbl">${label}:</span><span class="v ${v?"":"empty"}">${v?esc(v):"\u2014"}</span></div>`;
+  }
+  function blockField(label,id){
+    const v=val(id);
+    return `<div class="ln" style="display:block"><span class="lbl">${label}:</span> <span class="blk-v v ${v?"":"empty"}">${v?esc(v):"\u2014"}</span></div>`;
+  }
+  function chainListHTML(){
+    const lines=val("chainSummary").split(/\r?\n/).map(l=>l.replace(/^\s*\d+[\.\)]\s*/,"").trim()).filter(Boolean);
+    if(!lines.length) return `<div class="v empty">\u2014 no transfers entered \u2014</div>`;
+    return `<ol class="chain-list" style="counter-reset:none">`+
+      lines.map((l,i)=>`<li><span class="n">${i+1}.</span><span>${esc(l)}</span></li>`).join("")+`</ol>`;
+  }
+  function render(){
+    const st=radio("searchType"), tax=radio("taxStatus"), op=radio("opinion");
+    const cls=op==="Clear"?"s-clear":op==="Clouded"?"s-clouded":"s-resolve";
+    const html=`
+      <div class="doctitle">Title Search Report</div>
+
+      <div class="grp">
+        <div class="grp-h">Property Information</div>
+        ${line("Property Address","propAddress")}
+        ${line("County","county")}
+        ${line("State","state")}
+        <div class="ln"><span class="lbl">Search Type:</span><span class="v">
+          <span class="cbopt">${box(st.includes("40"))}Full Title Search (40-Year)</span>
+          <span class="cbopt">${box(st==="Current Owner Search")}Current Owner Search</span></span></div>
+        ${line("Order ID","orderId")}
+        ${line("Date Completed","dateCompleted")}
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Current Vesting / Ownership</div>
+        ${line("Current Owner(s)","owner")}
+        ${line("Vesting Type","vesting")}
+        ${line("Deed Reference","deedRef")}
+        ${line("Recorded Date","recordedDate")}
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Chain of Title Summary ${st.includes("40")?"(40-Year Minimum)":""}</div>
+        <div class="intro">Summary of ownership transfers from present date back${st.includes("40")?" 40 years":""}:</div>
+        ${chainListHTML()}
+        <div class="ln" style="margin-top:6px"><span class="lbl">Notes on gaps or breaks in chain:</span><span class="v ${val("chainNotes")?"":"empty"}">${val("chainNotes")?esc(val("chainNotes")):"\u2014"}</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Mortgages &amp; Deeds of Trust</div>
+        ${blockField("Current Mortgages","mortCurrent")}
+        ${blockField("Satisfied Mortgages","mortSatisfied")}
+        ${blockField("Assignments/Modifications","mortAssign")}
+        ${blockField("Open Balance Notes (if recorded)","mortBalance")}
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Liens &amp; Judgments</div>
+        ${blockField("County/State Tax Liens","lienTax")}
+        ${blockField("Civil Judgments","lienCivil")}
+        ${blockField("Federal Liens (if applicable)","lienFederal")}
+        ${blockField("Status Notes","lienNotes")}
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Tax Status</div>
+        <div class="ln"><span class="lbl">Property Taxes Status:</span><span class="v">
+          <span class="cbopt">${box(tax==="Current")}Current</span>
+          <span class="cbopt">${box(tax==="Delinquent")}Delinquent</span></span></div>
+        ${line("Amount Owed (if any)","taxAmount")}
+        ${line("Tax Year(s) Affected","taxYears")}
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Easements, Restrictions &amp; Encumbrances</div>
+        ${blockField("Easements","easements")}
+        ${blockField("HOA/Deed Restrictions","restrictions")}
+        ${blockField("Other Encumbrances","otherEnc")}
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Legal Description</div>
+        <div class="ln" style="display:block"><span class="lbl">Full Legal Description:</span>
+        <div class="legal-block v ${val("legal")?"":"empty"}">${val("legal")?esc(val("legal")):"\u2014"}</div></div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Title Opinion Summary</div>
+        <div class="ln"><span class="lbl">Overall Title Status:</span><span class="v">
+          <span class="cbopt">${box(op==="Clear")}Clear</span>
+          <span class="cbopt">${box(op==="Clouded")}Clouded</span>
+          <span class="cbopt">${box(op==="Requires Resolution")}Requires Resolution</span></span></div>
+        <div class="ln" style="display:block"><span class="lbl">Summary Notes:</span> <span class="blk-v v ${val("opinionNotes")?"":"empty"} ${cls} status-em" style="font-weight:400">${val("opinionNotes")?esc(val("opinionNotes")):"\u2014"}</span></div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-h">Prepared By</div>
+        <div class="prep-grid">
+          <div class="ln"><span class="lbl">Company:</span><span class="v ${val("company")?"":"empty"}">${esc(val("company")||"\u2014")}</span></div>
+          <div class="ln"><span class="lbl">Prepared By:</span><span class="v ${val("preparedBy")?"":"empty"}">${esc(val("preparedBy")||"\u2014")}</span></div>
+          <div class="ln"><span class="lbl">Contact:</span><span class="v ${val("contact")?"":"empty"}">${esc(val("contact")||"\u2014")}</span></div>
+        </div>
+      </div>`;
+    $("formOut").innerHTML=html;
+  }
+
+  // ---------- parsing ----------
+  const CANON={skip:"\u2014 ignore \u2014",grantor:"Grantor / Direct",grantee:"Grantee / Indirect",recDate:"Record date",docType:"Doc type",book:"Book / Vol",page:"Page",instrument:"Instrument / Doc #",amount:"Amount",legal:"Legal / property"};
+  const CANON_KEYS=Object.keys(CANON);
+  function guessCanon(h){
+    const s=(h||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+    if(/grantor|direct|from|mortgagor|assignor|debtor/.test(s))return "grantor";
+    if(/grantee|indirect|mortgagee|assignee|creditor|party|^to$/.test(s))return "grantee";
+    if(/(rec|record|file|recorded)date|^date$|recdate|dateofrecord/.test(s))return "recDate";
+    if(/doctype|documenttype|^type$|instrumenttype|kind|recordtype/.test(s))return "docType";
+    if(/book|volume|^vol$|liber/.test(s))return "book";
+    if(/^page$|^pg$|folio/.test(s))return "page";
+    if(/instrument|docnumber|documentnumber|docno|doc#|cfn|reception|filenumber|recordingnumber/.test(s))return "instrument";
+    if(/amount|consideration|debt|judgmentamount|principal/.test(s))return "amount";
+    if(/legal|description|property|subdivision|lot|parcel/.test(s))return "legal";
+    return "skip";
+  }
+  function detectDelim(text){
+    const l=(text.split(/\r?\n/).find(x=>x.trim())||"");
+    if(l.includes("\t"))return "\t";
+    if(l.includes("|"))return "|";
+    if((l.match(/,/g)||[]).length>=2)return ",";
+    if(/\s{2,}/.test(l))return /\s{2,}/;
+    return ",";
+  }
+  function splitLine(line,d){
+    if(d===","){const o=[];let c="",q=false;for(let i=0;i<line.length;i++){const ch=line[i];
+      if(ch==='"'){if(q&&line[i+1]==='"'){c+='"';i++;}else q=!q;}
+      else if(ch===","&&!q){o.push(c);c="";}else c+=ch;}o.push(c);return o.map(s=>s.trim());}
+    if(d instanceof RegExp)return line.trim().split(d).map(s=>s.trim());
+    return line.split(d).map(s=>s.trim());
+  }
+  function looksHeader(cells){
+    let known=0;cells.forEach(c=>{if(guessCanon(c)!=="skip")known++;});
+    const datey=cells.some(c=>/\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}/.test(c));
+    return known>=2 && !datey;
+  }
+  function parseText(text){
+    const rows=text.split(/\r?\n/).map(r=>r.replace(/\s+$/,"")).filter(r=>r.trim());
+    if(!rows.length)return null;
+    const d=detectDelim(text);
+    const grid=rows.map(r=>splitLine(r,d));
+    const width=Math.max(...grid.map(r=>r.length));
+    grid.forEach(r=>{while(r.length<width)r.push("");});
+    const hasHeader=looksHeader(grid[0]);
+    const header=hasHeader?grid[0]:grid[0].map((_,i)=>`Column ${i+1}`);
+    const map=header.map((h,i)=>hasHeader?guessCanon(h):"skip");
+    return {grid,header,hasHeader,map,width};
+  }
+
+  function docFull(dt){
+    const s=(dt||"").toUpperCase().replace(/[^A-Z ]/g,"");
+    const m={WD:"Warranty Deed",QC:"Quitclaim Deed",QCD:"Quitclaim Deed",SW:"Special Warranty Deed",SWD:"Special Warranty Deed",SD:"Sheriff's Deed",CD:"Corporate Deed",TD:"Trustee's Deed",BD:"Bargain & Sale Deed",GD:"Gift Deed",EXEC:"Executor's Deed",M:"Mortgage",MTG:"Mortgage",DOT:"Deed of Trust"};
+    if(m[s.trim()])return m[s.trim()];
+    if(/DEED OF TRUST/.test(s))return "Deed of Trust";
+    if(/MORTGAGE/.test(s))return "Mortgage";
+    if(/WARRANTY/.test(s))return "Warranty Deed";
+    if(/QUIT/.test(s))return "Quitclaim Deed";
+    if(/SHERIFF/.test(s))return "Sheriff's Deed";
+    if(/DEED/.test(s))return "Deed";
+    return dt||"";
+  }
+  function classify(dt){
+    const s=(dt||"").toUpperCase();
+    const has=(...a)=>a.some(x=>s.includes(x));
+    if(has("SATISF","RELEAS","DISCHARG"))return "mortSatisfied";
+    if(has("ASSIGN")||/\bASG\b/.test(s))return "mortAssign";
+    if(has("MORTGAGE","DEED OF TRUST")||/\bMTG\b|\bDOT\b|^M$/.test(s))return "mortCurrent";
+    if(has("FEDERAL","IRS")||/\bFTL\b/.test(s))return "lienFederal";
+    if(has("JUDG"))return "lienCivil";
+    if(has("TAX LIEN","MUNICIP")||/\bTAX\b/.test(s))return "lienTax";
+    if(has("LIEN","UCC","LIS PEND","MECH"))return "lienNotes";
+    if(has("DEED")||/\bWD\b|\bQC\b|\bQCD\b|\bSW\b|\bSWD\b|\bSD\b|\bCD\b|\bTD\b|\bBD\b|\bGD\b|\bEXEC\b/.test(s))return "chain";
+    return "review";
+  }
+  const BUCKETS=[["chain","Chain of title"],["mortCurrent","Mortgage \u2014 current"],["mortSatisfied","Mortgage \u2014 satisfied"],["mortAssign","Assignment / mod"],["lienTax","Tax lien"],["lienCivil","Civil judgment"],["lienFederal","Federal lien"],["lienNotes","Other / status note"],["skip","Skip"]];
+
+  function rowObj(r){
+    const o={};parseState.map.forEach((k,i)=>{if(k&&k!=="skip"&&r[i])o[k]=r[i];});return o;
+  }
+  function dataRows(){return parseState.hasHeader?parseState.grid.slice(1):parseState.grid;}
+
+  function renderParse(){
+    if(!parseState){$("parseArea").innerHTML="";return;}
+    // mapping bar
+    let map=`<div class="hdr-toggle"><input type="checkbox" id="hdrChk" ${parseState.hasHeader?"checked":""}> First row is a header</div><div class="map-bar">`;
+    parseState.header.forEach((h,i)=>{
+      const sample=(dataRows()[0]||[])[i]||"";
+      map+=`<div class="map-col"><span>${esc(h)}</span><select data-col="${i}">`+
+        CANON_KEYS.map(k=>`<option value="${k}" ${parseState.map[i]===k?"selected":""}>${esc(CANON[k])}</option>`).join("")+
+        `</select><span class="sample">${esc(sample)}</span></div>`;
+    });
+    map+=`</div>`;
+    // review table
+    const rows=dataRows();
+    let inc=0;
+    let tbl=`<div class="review-wrap"><table class="review"><thead><tr><th>Use</th><th>Date</th><th>Grantor</th><th>Grantee</th><th>Doc type</th><th>Bk/Pg</th><th>Instr</th><th>Amount</th><th>Route to</th></tr></thead><tbody>`;
+    parseState.review=rows.map((r,ri)=>{
+      const o=rowObj(r);
+      const guess=parseState.routes&&parseState.routes[ri]!=null?parseState.routes[ri]:classify(o.docType);
+      const include=parseState.incl?parseState.incl[ri]!==false:true;
+      if(include&&guess!=="skip"&&guess!=="review")inc++;
+      const bp=[o.book,o.page].filter(Boolean).join("/");
+      tbl+=`<tr class="${include?"":"exc"}">
+        <td class="inc"><input type="checkbox" class="rinc" data-r="${ri}" ${include?"checked":""}></td>
+        <td class="mono">${esc(o.recDate||"")}</td>
+        <td>${esc(o.grantor||"")}</td>
+        <td>${esc(o.grantee||"")}</td>
+        <td>${esc(o.docType||"")}</td>
+        <td class="mono">${esc(bp)}</td>
+        <td class="mono">${esc(o.instrument||"")}</td>
+        <td class="mono">${esc(o.amount||"")}</td>
+        <td><select class="rroute" data-r="${ri}">${BUCKETS.map(b=>`<option value="${b[0]}" ${guess===b[0]?"selected":(guess==="review"&&b[0]==="skip"?"":"")}>${b[1]}</option>`).join("")}</select></td>
+      </tr>`;
+      return {o,route:guess,include};
+    }).map((x,ri)=>{ // sync default route into state for those left at classify
+      if(!parseState.routes) parseState.routes={};
+      if(parseState.routes[ri]==null) parseState.routes[ri]=x.route==="review"?"skip":x.route;
+      return x;
+    });
+    tbl+=`</tbody></table></div>
+      <div class="review-foot">
+        <span class="pill" id="incCount">${inc} document(s) will be filed</span>
+        <button class="btn-primary btn-sm" id="commitBtn" type="button">Fill the form with these records</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0">Review each row, fix the column mapping or routing if the parser guessed wrong, and uncheck anything that belongs to another property. Auto-filled fields stay editable.</p>`;
+    $("parseArea").innerHTML=map+tbl;
+    wireParse();
+  }
+  function wireParse(){
+    $("hdrChk").onchange=e=>{parseState.hasHeader=e.target.checked;
+      parseState.header=parseState.hasHeader?parseState.grid[0]:parseState.grid[0].map((_,i)=>`Column ${i+1}`);
+      parseState.map=parseState.header.map((h,i)=>parseState.hasHeader?guessCanon(h):"skip");
+      parseState.routes=null;parseState.incl=null;renderParse();};
+    $("parseArea").querySelectorAll(".map-col select").forEach(s=>s.onchange=e=>{
+      parseState.map[+e.target.dataset.col]=e.target.value;parseState.routes=null;renderParse();});
+    $("parseArea").querySelectorAll(".rinc").forEach(c=>c.onchange=e=>{
+      parseState.incl=parseState.incl||{};parseState.incl[+e.target.dataset.r]=e.target.checked;renderParse();});
+    $("parseArea").querySelectorAll(".rroute").forEach(s=>s.onchange=e=>{
+      parseState.routes=parseState.routes||{};parseState.routes[+e.target.dataset.r]=e.target.value;renderParse();});
+    $("commitBtn").onclick=commit;
+  }
+
+  function bp(o){return (o.book||o.page)?` Bk ${o.book||"\u2014"}/Pg ${o.page||"\u2014"}`:"";}
+  function sortKey(s){const m=String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})|(\d{4})-(\d{2})-(\d{2})/);
+    if(!m)return 0;
+    if(m[3]){let y=+m[3];if(y<100)y+=y>40?1900:2000;return y*10000+(+m[1])*100+(+m[2]);}
+    return (+m[4])*10000+(+m[5])*100+(+m[6]);}
+
+  function commit(){
+    const rows=dataRows();
+    const groups={chain:[],mortCurrent:[],mortSatisfied:[],mortAssign:[],lienTax:[],lienCivil:[],lienFederal:[],lienNotes:[]};
+    rows.forEach((r,ri)=>{
+      if(parseState.incl&&parseState.incl[ri]===false)return;
+      const route=(parseState.routes&&parseState.routes[ri])||"skip";
+      if(route==="skip"||!groups[route])return;
+      groups[route].push(rowObj(r));
+    });
+    // chain: newest -> oldest
+    groups.chain.sort((a,b)=>sortKey(b.recDate)-sortKey(a.recDate));
+    const chainLines=groups.chain.map((o,i)=>{
+      const g1=o.grantor||"?",g2=o.grantee||"?";
+      return `${g1} \u2192 ${g2} \u2014 ${docFull(o.docType)||"Deed"}, ${o.recDate||"n/d"},${bp(o)}${o.instrument?` (Instr ${o.instrument})`:""}`.replace(/,\s*$/,"");
+    });
+    if(chainLines.length) setField("chainSummary",chainLines.map((l,i)=>`${i+1}. ${l}`).join("\n"));
+
+    const mLine=o=>`${o.grantee||o.grantor||"?"}${o.amount?` \u2014 ${o.amount}`:""}, ${o.recDate||"n/d"}${bp(o)}${o.instrument?` (Instr ${o.instrument})`:""}`;
+    if(groups.mortCurrent.length) setField("mortCurrent",groups.mortCurrent.map(mLine).join("\n"));
+    if(groups.mortSatisfied.length) setField("mortSatisfied",groups.mortSatisfied.map(mLine).join("\n"));
+    if(groups.mortAssign.length) setField("mortAssign",groups.mortAssign.map(mLine).join("\n"));
+
+    const lLine=o=>`${o.grantee||o.grantor||"?"}${o.amount?` \u2014 ${o.amount}`:""}, ${o.recDate||"n/d"}${o.instrument?` (Instr ${o.instrument})`:""}`;
+    if(groups.lienTax.length) setField("lienTax",groups.lienTax.map(lLine).join("\n"));
+    if(groups.lienCivil.length) setField("lienCivil",groups.lienCivil.map(lLine).join("\n"));
+    if(groups.lienFederal.length) setField("lienFederal",groups.lienFederal.map(lLine).join("\n"));
+    if(groups.lienNotes.length) setField("lienNotes",groups.lienNotes.map(o=>`${(o.docType||"Item")}: ${lLine(o)}`).join("\n"));
+
+    // auto-fill owner / deed ref / recorded date / legal from newest deed (only if blank)
+    if(groups.chain.length){
+      const top=groups.chain[0];
+      if(!val("owner")&&top.grantee) setField("owner",top.grantee,true);
+      if(!val("deedRef")&&(top.book||top.page)) setField("deedRef",`${top.book||""}${top.page?" / "+top.page:""}`.trim(),true);
+      if(!val("recordedDate")&&top.recDate) setField("recordedDate",top.recDate,true);
+      if(!val("legal")&&top.legal) setField("legal",top.legal,true);
+    }
+    const filed=Object.values(groups).reduce((n,g)=>n+g.length,0);
+    parseState=null;$("parseArea").innerHTML="";$("pasteBox").value="";
+    render();save();
+    toast(`Filled the form with ${filed} record(s) — review the highlighted fields, then verify before delivery.`);
+    document.querySelector(".pane-preview").scrollTop=0;
+  }
+  function setField(id,v,highlight){const e=$(id);if(!e)return;e.value=v;if(highlight){e.classList.add("auto-filled");setTimeout(()=>e.classList.remove("auto-filled"),4000);}}
+
+  // ---------- order id / persistence / io ----------
+  function pre(){const c=val("county");if(/New Castle/i.test(c)||!c)return "NCC";if(/Kent/i.test(c))return "KEN";if(/Sussex/i.test(c))return "SUS";return c.replace(/county/i,"").trim().slice(0,3).toUpperCase()||"TTL";}
+  function genId(){let seq=1;try{seq=parseInt(localStorage.getItem(SEQ_KEY)||"0",10)+1;localStorage.setItem(SEQ_KEY,String(seq));}catch(e){seq=Math.floor(Math.random()*900)+100;}
+    $("orderId").value=`${pre()}-${new Date().getFullYear()}-${String(seq).padStart(3,"0")}`;render();save();}
+  function fileName(){const a=(val("propAddress")||"Property").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-");
+    const d=(val("dateCompleted")||new Date().toISOString().slice(0,10)).replace(/[\/]/g,"-");return `${pre()}_${a}_${d}`;}
+  function collect(){const o={fields:{},radios:{}};
+    document.querySelectorAll("input[type=text],input[type=date],textarea,select").forEach(e=>{if(e.id)o.fields[e.id]=e.value;});
+    ["searchType","taxStatus","opinion"].forEach(n=>o.radios[n]=radio(n));return o;}
+  function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(collect()));}catch(e){}}
+  function apply(o){if(!o)return;
+    Object.entries(o.fields||{}).forEach(([id,v])=>{const e=$(id);if(e)e.value=v;});
+    Object.entries(o.radios||{}).forEach(([n,v])=>{document.querySelectorAll(`input[name="${n}"]`).forEach(e=>{if(e.value===v)e.checked=true;});});
+    render();}
+  function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3200);}
+
+  const DEMO=`Party Type\tGrantor / Direct\tGrantee / Indirect\tRecord Date\tDoc Type\tBook\tPage\tInstrument\tLegal
+Deed\tWERNER, STEVE M\tSTEVENS, DONALD P & KATHLEEN S\t06/15/2018\tWD\t44450\t412\t107285060\tLOT 39 BLK 108 BRANDYWINE HUNDRED
+Mortgage\tSTEVENS, DONALD P & KATHLEEN S\tWSFS BANK\t06/20/2018\tMTG\t44512\t88\t107285061\tLOT 39 BLK 108 BRANDYWINE HUNDRED
+Deed\tMAITLAND HOMES LLC\tWERNER, STEVE M\t04/10/2002\tWD\t8123\t210\t98112233\tLOT 39 BLK 108 BRANDYWINE HUNDRED
+Satisfaction\tFIRST USA BANK NA\tWERNER, STEVE M\t03/02/2009\tSAT\t9011\t5\t99220044\tLOT 39 BLK 108 BRANDYWINE HUNDRED
+Judgment\tMIDLAND FUNDING LLC\tWERNER, STEVE M\t09/12/2016\tCIVIL JUDGMENT\t\t\tJ2016-0912\t$3,200.00
+Federal Lien\tINTERNAL REVENUE SERVICE\tWERNER, STEVE M\t02/01/2015\tFEDERAL TAX LIEN\t\t\tFTL2015-771\t$11,420.00
+Deed\tSTEVENS, DONALD P\tRIVER BEND CONDO ASSOC\t07/01/2019\tWD\t44890\t990\t107300915\tUNIT 6 RIVER BEND CONDO (OTHER PROPERTY)`;
+
+  function startParse(text){if(!text||!text.trim()){toast("Nothing to parse — paste rows or load the demo.");return;}
+    parseState=parseText(text);if(!parseState){toast("Could not read those rows.");return;}renderParse();
+    $("parseArea").scrollIntoView({behavior:"smooth",block:"nearest"});}
+
+  function init(){
+    $("dateCompleted").value=new Date().toLocaleDateString("en-US");
+    document.addEventListener("input",e=>{if(e.target.closest(".pane-form")&&!e.target.closest("#parseArea")&&!e.target.matches('input[type=file]')){render();save();}});
+    document.addEventListener("change",e=>{if(["opinion","taxStatus","searchType"].includes(e.target.name)){render();save();}});
+
+    $("parseBtn").onclick=()=>startParse($("pasteBox").value);
+    $("demoBtn").onclick=()=>{$("pasteBox").value=DEMO;startParse(DEMO);};
+    $("recFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+      rd.onload=()=>{$("pasteBox").value=rd.result;startParse(rd.result);};rd.readAsText(f);e.target.value="";});
+    $("genId").onclick=genId;
+
+    $("printBtn").onclick=()=>{const t=document.title;document.title=fileName();
+      window.addEventListener("afterprint",()=>{document.title=t;},{once:true});window.print();};
+    $("saveBtn").onclick=()=>{const b=new Blob([JSON.stringify(collect(),null,2)],{type:"application/json"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=fileName()+".json";a.click();URL.revokeObjectURL(a.href);toast("Draft saved");};
+    $("loadBtn").onclick=()=>$("loadFile").click();
+    $("loadFile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+      rd.onload=()=>{try{apply(JSON.parse(rd.result));$("restoreBar").classList.remove("show");save();toast("Draft loaded");}catch(err){toast("Could not read that file");}};
+      rd.readAsText(f);e.target.value="";});
+    $("newBtn").onclick=()=>{if(!confirm("Start a new blank report? On-screen data will be cleared."))return;try{localStorage.removeItem(LS_KEY);}catch(e){}location.reload();};
+    $("discardRestore").onclick=()=>{try{localStorage.removeItem(LS_KEY);}catch(e){}location.reload();};
+    $("exportCodeBtn").onclick=()=>{const b=new Blob([SRC],{type:"text/plain"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="Apex_Title_Form_Filler.txt";a.click();URL.revokeObjectURL(a.href);toast("Code exported");};
+
+    let saved=null;try{saved=JSON.parse(localStorage.getItem(LS_KEY)||"null");}catch(e){}
+    if(saved&&saved.fields){apply(saved);$("restoreBar").classList.add("show");}
+    render();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
+</body>
+</html>
