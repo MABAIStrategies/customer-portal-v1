@@ -17,21 +17,27 @@ import { dirname, join } from "node:path";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const HTML = readFileSync(join(ROOT, "Apex_Title_Form_Filler.html"), "utf8");
 
-/** Slice `function <name>(...) { ... }` out of the source by matching braces. */
+/** Slice `function <name>(...) { ... }` out of the source by matching braces.
+ *  Tolerant of whitespace in the signature and of // and /* *​/ comments inside
+ *  the body, so it doesn't break if the HTML is reformatted later. */
 function extractFn(src, name) {
-  const sig = `function ${name}(`;
-  const start = src.indexOf(sig);
-  if (start === -1) throw new Error(`function ${name} not found in HTML`);
+  const m = src.match(new RegExp(`function\\s+${name}\\s*\\(`));
+  if (!m) throw new Error(`function ${name} not found in HTML`);
+  const start = m.index;
   const braceOpen = src.indexOf("{", start);
-  let depth = 0, inStr = null, esc = false;
+  let depth = 0, inStr = null, esc = false, inLine = false, inBlock = false;
   for (let i = braceOpen; i < src.length; i++) {
-    const c = src[i];
+    const c = src[i], next = src[i + 1];
+    if (inLine) { if (c === "\n") inLine = false; continue; }
+    if (inBlock) { if (c === "*" && next === "/") { inBlock = false; i++; } continue; }
     if (inStr) {
       if (esc) esc = false;
       else if (c === "\\") esc = true;
       else if (c === inStr) inStr = null;
       continue;
     }
+    if (c === "/" && next === "/") { inLine = true; i++; continue; }
+    if (c === "/" && next === "*") { inBlock = true; i++; continue; }
     if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
     if (c === "{") depth++;
     else if (c === "}") { depth--; if (depth === 0) return src.slice(start, i + 1); }
@@ -42,7 +48,7 @@ function extractFn(src, name) {
 // Pull the pure functions (and the CANON map literal) the browser actually ships.
 const NEEDED = ["detectDelim", "splitLine", "looksHeader", "guessCanon", "parseText",
                 "classify", "docFull", "sortKey"];
-const canonLine = HTML.split("\n").find(l => l.includes("const CANON=")).trim();
+const canonLine = HTML.split("\n").find(l => /const\s+CANON\s*=/.test(l)).trim();
 const bundle = canonLine + "\nconst CANON_KEYS=Object.keys(CANON);\n" +
   NEEDED.map(n => extractFn(HTML, n)).join("\n") +
   `\nreturn { ${NEEDED.join(", ")}, CANON, CANON_KEYS };`;
