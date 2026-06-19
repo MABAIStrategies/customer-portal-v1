@@ -318,14 +318,16 @@ function parseText(text){const rows=text.split(/\r?\n/).map(r=>r.replace(/\s+$/,
   const hasHeader=looksHeader(grid[0]); const header=hasHeader?grid[0]:grid[0].map((_,i)=>`Column ${i+1}`);
   const map=header.map((h,i)=>hasHeader?guessCanon(h):"skip"); return {grid,header,hasHeader,map,width};}
 function docFull(dt){const s=(dt||"").toUpperCase().replace(/[^A-Z ]/g,"");
-  const m={WD:"Warranty Deed",QC:"Quitclaim Deed",QCD:"Quitclaim Deed",SW:"Special Warranty Deed",SWD:"Special Warranty Deed",SD:"Sheriff's Deed",CD:"Corporate Deed",TD:"Trustee's Deed",BD:"Bargain & Sale Deed",GD:"Gift Deed",EXEC:"Executor's Deed",M:"Mortgage",MTG:"Mortgage",DOT:"Deed of Trust"};
+  const m={WD:"Warranty Deed",QC:"Quitclaim Deed",QCD:"Quitclaim Deed",SW:"Special Warranty Deed",SWD:"Special Warranty Deed",SD:"Sheriff's Deed",CD:"Corporate Deed",TD:"Trustee's Deed",BD:"Bargain & Sale Deed",GD:"Gift Deed",EXEC:"Executor's Deed","EXECUTORS DEED":"Executor's Deed",M:"Mortgage",MTG:"Mortgage",DOT:"Deed of Trust",ASGN:"Assignment of Mortgage",ASG:"Assignment of Mortgage",SAT:"Satisfaction of Mortgage",SATIS:"Satisfaction of Mortgage",REL:"Release",LP:"Lis Pendens"};
   if(m[s.trim()])return m[s.trim()];
   if(/DEED OF TRUST/.test(s))return "Deed of Trust"; if(/MORTGAGE/.test(s))return "Mortgage";
+  if(/ASSIGN/.test(s))return "Assignment of Mortgage"; if(/SATISF|RELEAS/.test(s))return "Satisfaction of Mortgage";
+  if(/LIS PEND/.test(s))return "Lis Pendens"; if(/MECH/.test(s))return "Mechanics Lien";
   if(/WARRANTY/.test(s))return "Warranty Deed"; if(/QUIT/.test(s))return "Quitclaim Deed";
   if(/SHERIFF/.test(s))return "Sheriff's Deed"; if(/DEED/.test(s))return "Deed"; return dt||"";}
 function classify(dt){const s=(dt||"").toUpperCase(); const has=(...a)=>a.some(x=>s.includes(x));
-  if(has("SATISF","RELEAS","DISCHARG"))return "mortSatisfied";
-  if(has("ASSIGN")||/\bASG\b/.test(s))return "mortAssign";
+  if(has("SATISF","RELEAS","DISCHARG")||/\bSAT\b|\bREL\b/.test(s))return "mortSatisfied";
+  if(has("ASSIGN")||/\bASG\b|\bASGN\b/.test(s))return "mortAssign";
   if(has("MORTGAGE","DEED OF TRUST")||/\bMTG\b|\bDOT\b|^M$/.test(s))return "mortCurrent";
   if(has("FEDERAL","IRS")||/\bFTL\b/.test(s))return "lienFederal";
   if(has("JUDG"))return "lienCivil";
@@ -376,7 +378,16 @@ function extractSource(text,sourceType){
   const lines=text.split(/\r?\n/);
   let tabLines=lines.filter(l=>l.includes("\t"));
   if(tabLines.length<2){const pl=lines.filter(l=>l.includes("|"));if(pl.length>=2)tabLines=pl;}
-  if(tabLines.length<2){const cl=lines.filter(l=>(l.match(/,/g)||[]).length>=4);if(cl.length>=2)tabLines=cl;}
+  if(tabLines.length<2){
+    const tlc=l=>{let n=0,q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"')q=!q;else if(ch===","&&!q)n++;}return n;};
+    let cl=lines.filter(l=>tlc(l)>=4);
+    if(cl.length>=2){ // keep rows near the modal column count → drops comma-heavy prose (e.g. metes & bounds)
+      const freq={};cl.forEach(l=>{const c=tlc(l);freq[c]=(freq[c]||0)+1;});
+      let mode=0,best=-1;for(const c in freq){if(freq[c]>best){best=freq[c];mode=+c;}}
+      cl=cl.filter(l=>Math.abs(tlc(l)-mode)<=1);
+      if(cl.length>=2)tabLines=cl;
+    }
+  }
   if(tabLines.length>=2){
     const st=parseText(tabLines.join("\n")); if(st){
       const rows=st.hasHeader?st.grid.slice(1):st.grid;
@@ -408,6 +419,9 @@ function extractSource(text,sourceType){
   moneyLines(text,"JUDGMENT").forEach(v=>res.records.push({route:"lienCivil",narrative:v}));
   moneyLines(text,"FEDERAL TAX LIEN").forEach(v=>res.records.push({route:"lienFederal",narrative:v}));
   moneyLines(text,"MECHANICS LIEN").forEach(v=>res.records.push({route:"lienNotes",narrative:"Mechanics lien: "+v}));
+  moneyLines(text,"STATE TAX LIEN").forEach(v=>res.records.push({route:"lienTax",narrative:"State tax lien: "+v}));
+  moneyLines(text,"MUNICIPAL LIEN").forEach(v=>res.records.push({route:"lienTax",narrative:"Municipal lien: "+v}));
+  moneyLines(text,"LIS PENDENS").forEach(v=>res.records.push({route:"lienNotes",narrative:"Lis pendens: "+v}));
   return res;
 }
 
