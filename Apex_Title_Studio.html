@@ -131,6 +131,19 @@
   .sheet .sigblock .sigimg img{height:54px}
   .sheet .sigmeta{font-family:var(--sans);font-size:10px;color:#5a5446}
 
+  /* ---------- production polish ---------- */
+  .sheet{position:relative}
+  .sheet .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
+  .sheet .wm span{font-family:var(--sans);font-weight:800;font-size:150px;letter-spacing:12px;color:rgba(154,47,47,.06);transform:rotate(-28deg);white-space:nowrap}
+  .sheet .rhead,.sheet .rtitle,.sheet .draftband,.sheet .rmeta,.sheet .brassrule,.sheet .body,.sheet .certblock,.sheet .sigblock{position:relative;z-index:1}
+  .sheet .brassrule{margin:0 40px;border-top:2px solid var(--brass);border-bottom:1px solid var(--brass-soft);height:3px}
+  .sheet .rmeta{display:flex;flex-wrap:wrap;gap:5px 24px;justify-content:center;margin:10px 40px 2px;font-family:var(--sans);font-size:10px;color:#4a463d}
+  .sheet .rmeta .m{display:flex;gap:6px}
+  .sheet .rmeta .m b{font-size:8.5px;letter-spacing:.6px;text-transform:uppercase;color:#8a8472;font-weight:700;align-self:center}
+  .sheet .certblock{margin:20px 40px 2px;font-family:var(--sans);font-size:10.5px;font-style:italic;color:#33302a;line-height:1.5}
+  .sheet .firmfoot{position:relative;z-index:1;margin:16px 40px 30px;padding-top:10px;border-top:1px solid #cfc9bb;font-family:var(--sans);font-size:9px;color:#8a8472;text-align:center;line-height:1.6}
+  .runfoot{display:none}
+
   /* ---------- signature modal ---------- */
   .modal{position:fixed;inset:0;background:rgba(6,8,11,.78);display:none;align-items:center;justify-content:center;z-index:80}
   .modal.show{display:flex}
@@ -159,7 +172,10 @@
     #reportTurn .bubble{border:0;padding:0;background:#fff}
     .reportwrap{margin:0}
     .sheet{box-shadow:none;border:none;border-radius:0}
-    @page{size:Letter;margin:.5in}
+    .sheet .wm{position:fixed}
+    .sheet .sec,.sheet .r,.sheet ul.cv,.sheet .legal,.sheet .sigblock,.sheet .certblock,.sheet .notice,.sheet .firmfoot{break-inside:avoid}
+    .runfoot{display:block;position:fixed;bottom:0;left:0;right:0;text-align:center;font-family:var(--sans);font-size:8px;letter-spacing:.4px;color:#9a917c;padding:3px 0;border-top:1px solid #e7e1d2;background:#fff}
+    @page{size:Letter;margin:.55in .5in .7in}
   }
   @media (max-width:820px){.app{grid-template-columns:1fr;grid-template-rows:54px auto 1fr}.drawer{max-height:230px}}
 </style>
@@ -395,6 +411,7 @@ function extractSource(text,sourceType){
 function composeNorthStar(){
   const V=(v,source)=>({v:v||"",verified:false,source:source||""});
   const model={
+    fileId:V("",""),
     searchDate:V("",""), indexDate:V("",""),
     property:V("",""), condoSubdivision:V("",""), hundred:V("",""),
     parcelNumber:V("",""), unitLot:V("",""), block:V("",""), section:V("",""),
@@ -513,6 +530,7 @@ function extractPdf(file){
    ========================================================================= */
 let MODEL=null;
 const SCALAR=[
+  ["fileId","File / Order ID"],
   ["searchDate","Search Date"],["indexDate","Index Date"],["property","Property"],
   ["condoSubdivision","Condo / Subdivision"],["hundred","Hundred"],["parcelNumber","Parcel #"],
   ["unitLot","Unit / Lot"],["block","Block"],["section","Section"],
@@ -573,24 +591,29 @@ function listHtml(arr){return arr.length?`<ul class="cv">${arr.map(it=>`<li clas
 function buildReport(){
   const M=MODEL, uv=o=>o.v&&!o.verified;
   const draft=anyUnverified();
-  const sig = SIGNATURE ? `
+  const meta=(label,o)=>`<span class="m"><b>${label}</b><span ${uv(o)?'style="color:var(--verify)"':''}>${o.v?esc(o.v):"—"}</span></span>`;
+  const cert = SIGNATURE ? `
+    <div class="certblock">I certify that I have reviewed this abstract and that, to the best of my knowledge, it reflects the records examined as of the stated search date.</div>
     <div class="sigblock">
       <div><div class="sigimg">${SIGNATURE.dataUrl?`<img src="${SIGNATURE.dataUrl}">`:`<span style="font-family:var(--serif);font-size:26px">${esc(SIGNATURE.typed||"")}</span>`}</div>
-        <div class="sigmeta">${esc(SIGNATURE.name||"")} — Abstractor</div></div>
-      <div class="sigmeta">Signed ${esc(SIGNATURE.when)}<br>Reviewed &amp; certified by signatory.</div>
-    </div>` : "";
+        <div class="sigmeta">${esc(SIGNATURE.name||"")} · Abstractor</div></div>
+      <div class="sigmeta">Signed ${esc(SIGNATURE.when)}<br>File ${esc(M.fileId.v||"—")}</div>
+    </div>`
+    : `<div class="sigblock"><div><div class="sigimg"></div><div class="sigmeta">Signature of Abstractor</div></div><div class="sigmeta">Date __________________</div></div>`;
+  const yr=new Date().getFullYear();
   const html=`
   <div class="sheet" id="sheet">
+    ${draft?`<div class="wm"><span>DRAFT</span></div>`:""}
     <div class="rhead">
       <div class="seal2">A</div>
       <div class="co">Apex Abstracts</div>
       <div class="ln1">A Title Abstracting Company · New Castle · Kent · Sussex, Delaware</div>
     </div>
+    <div class="brassrule"></div>
     <div class="rtitle">TITLE SEARCH REPORT</div>
+    <div class="rmeta">${meta("File / Order",M.fileId)}${meta("Search Date",M.searchDate)}${meta("Index Date",M.indexDate)}${meta("Parcel",M.parcelNumber)}</div>
     ${draft?`<div class="draftband"><b>DRAFT — NOT A COMPLETED SEARCH.</b> Fields shown in red were transcribed from source reports and have not been verified against recorded instruments. Remove this banner only after the search is complete and certified.</div>`:""}
     <div class="body">
-      ${row("Search Date",M.searchDate.v,uv(M.searchDate))}
-      ${row("Index Date",M.indexDate.v,uv(M.indexDate))}
       ${row("Property",M.property.v,uv(M.property))}
       ${row("Condo / Subdivision",M.condoSubdivision.v,uv(M.condoSubdivision))}
       ${row("Hundred",M.hundred.v,uv(M.hundred))}
@@ -603,7 +626,7 @@ function buildReport(){
       ${row("Deed Record",M.deedRecord.v,uv(M.deedRecord))}
 
       <div class="sec">LEGAL DESCRIPTION</div>
-      <div class="legal ${uv(M.legalDescription)?"":""}" ${uv(M.legalDescription)?'style="color:var(--verify)"':""}>${M.legalDescription.v?esc(M.legalDescription.v):"[TO BE VERIFIED — pull recorded instrument]"}</div>
+      <div class="legal" ${uv(M.legalDescription)?'style="color:var(--verify)"':""}>${M.legalDescription.v?esc(M.legalDescription.v):"[TO BE VERIFIED — pull recorded instrument]"}</div>
 
       <div class="sec">CHAIN OF TITLE / DIRECT CONVEYANCES</div>${listHtml(M.chain)}
       <div class="sec">MORTGAGES / DEEDS OF TRUST</div>${listHtml(M.mortgages)}
@@ -618,8 +641,10 @@ function buildReport(){
       <div class="notice"><b>NOTICE:</b> This form does not constitute title insurance. Liability is assumed by the Company solely in its capacity as Abstractor for its negligence, mistakes or omissions in a sum not exceeding Five Hundred Dollars unless used in conjunction with a title insurance policy written through this company.</div>
       <div class="notice"><b>NOTICE:</b> No certification is made as to taxes and sewer charges without a County tax certification being ordered. Subject, further, to any/all applicable covenants, conditions, easements, rights-of-way, reservations, restrictions, and agreements of record.</div>
     </div>
-    ${sig}
-  </div>`;
+    ${cert}
+    <div class="firmfoot">Apex Abstracts LLC · orders@apexabstracts.com · Wilmington, Delaware · (302) 000-0000<br>This title abstract is not a policy of title insurance. © ${yr} Apex Abstracts. All rights reserved.</div>
+  </div>
+  <div class="runfoot">Apex Abstracts · File ${esc(M.fileId.v||"—")} · Confidential — title abstract, not title insurance${draft?" · DRAFT":""}</div>`;
   $("#reportwrap").innerHTML=html;
   $("#reportTurn").style.display="";
 }
@@ -647,8 +672,11 @@ function googleDocHtml(){
   <h3>Federal Tax Lien</h3>${li(M.federalLien)}<h3>Other Liens</h3>${li(M.otherLiens)}
   </body></html>`;
 }
-function fileBase(){const a=(MODEL.property.v||"Property").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,48);
-  return `Apex_${a}_${new Date().toISOString().slice(0,10)}`;}
+function genId(){let seq=1;try{seq=parseInt(localStorage.getItem("apex_studio_seq")||"0",10)+1;localStorage.setItem("apex_studio_seq",String(seq));}catch(e){seq=Math.floor(Math.random()*900)+100;}
+  return `APX-${new Date().getFullYear()}-${String(seq).padStart(3,"0")}`;}
+function fileBase(){const id=(MODEL&&MODEL.fileId&&MODEL.fileId.v)?MODEL.fileId.v.replace(/[^\w-]/g,""):"";
+  const a=(MODEL.property.v||"Property").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,48);
+  return `${id?id+"_":""}Apex_${a}_${new Date().toISOString().slice(0,10)}`;}
 const GDOC_KEY="apex_gdoc_endpoint";
 function getEndpoint(){try{return localStorage.getItem(GDOC_KEY)||"";}catch(e){return "";}}
 function setEndpoint(u){try{u?localStorage.setItem(GDOC_KEY,u):localStorage.removeItem(GDOC_KEY);}catch(e){}}
@@ -718,6 +746,7 @@ function init(){
 
   $("#extractBtn").onclick=()=>{
     MODEL=composeNorthStar();
+    MODEL.fileId={v:genId(),verified:true,source:"Apex"}; // our own order ID — counts as verified
     MODEL.searchDate.v = MODEL.searchDate.v || ""; // left for abstractor
     $("#dataTurn").style.display=""; renderData();
     $("#dataTurn").scrollIntoView({behavior:"smooth",block:"start"});
