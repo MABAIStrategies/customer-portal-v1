@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Title Studio</title>
+<style>
+  :root{
+    /* MAB workspace shell (Modern Stoic Luxury) */
+    --bg:#0f1216;--panel:#161a20;--panel-2:#1c2128;--line:#2a313b;--line-soft:#222831;
+    --ink:#eef2f6;--ink-soft:#aeb7c2;--ink-faint:#6b7682;
+    --blue:#00e5ff;--blue-dim:#0bb6cc;
+    /* Apex report brand (brass + serif) */
+    --brass:#8a6d3b;--brass-soft:#b9a06a;--paper:#fff;--paperink:#14110b;
+    --verify:#d23b3b;--ok:#2f9e63;--warn:#c9961f;
+    --sans:-apple-system,"Segoe UI","Inter",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Times New Roman",Times,"Liberation Serif",Georgia,serif;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  button{font-family:inherit;cursor:pointer}
+  ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#2a313b;border-radius:6px}
+
+  /* ---------- shell ---------- */
+  .app{display:grid;grid-template-columns:288px minmax(0,1fr);grid-template-rows:54px 1fr;height:100vh}
+  .topbar{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 18px;background:#0c0e12;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .seal{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--line);font-family:var(--serif);font-weight:700;color:var(--brass-soft)}
+  .brand b{font-family:var(--serif);font-size:16px;letter-spacing:.3px;font-weight:700}
+  .brand .sub{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint)}
+  .topbar .right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-faint)}
+  .offline-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px}
+  .offline-pill .ld{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+
+  /* ---------- sources drawer ---------- */
+  .drawer{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:14px 12px}
+  .drawer h2{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint);margin:4px 4px 12px;font-weight:700}
+  .src{margin-bottom:10px;border:1px dashed var(--line);border-radius:10px;background:var(--panel-2);padding:11px;transition:border-color .15s,background .15s}
+  .src.drag{border-color:var(--blue);background:#192531}
+  .src.loaded{border-style:solid;border-color:#2f4a3a;background:#13201a}
+  .src .h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600}
+  .src .n{width:20px;height:20px;border-radius:5px;display:grid;place-items:center;font-size:11px;font-family:var(--mono);background:#0d1014;border:1px solid var(--line);color:var(--brass-soft);flex:none}
+  .src.loaded .n{background:#14241b;border-color:#2f4a3a;color:#74d39a}
+  .src .desc{font-size:10.5px;color:var(--ink-faint);margin:6px 0 8px;line-height:1.4}
+  .src .drop{font-size:11px;color:var(--ink-soft);text-align:center;padding:6px;border-radius:6px}
+  .src .status{font-size:10.5px;color:#74d39a;display:none;align-items:center;gap:5px;margin-top:4px}
+  .src.loaded .status{display:flex}
+  .src .status .x{margin-left:auto;color:var(--ink-faint);cursor:pointer;font-size:13px}
+  .src textarea{display:none;width:100%;margin-top:7px;background:#0c0e12;color:var(--ink);border:1px solid var(--line);border-radius:6px;font-family:var(--mono);font-size:11px;padding:7px;min-height:54px;resize:vertical}
+  .src .paste-toggle{font-size:10px;color:var(--blue-dim);cursor:pointer;margin-top:6px;display:inline-block}
+  .drawer .mini-btn{width:100%;margin-top:4px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-soft);border-radius:7px;padding:7px;font-size:11px}
+  .drawer .mini-btn:hover{border-color:var(--blue);color:#fff}
+
+  /* ---------- main workspace (thread) ---------- */
+  .main{overflow-y:auto;position:relative}
+  .thread{max-width:880px;margin:0 auto;padding:26px 26px 160px}
+  .turn{margin-bottom:22px}
+  .turn .role{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:9px}
+  .turn .role .av{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px}
+  .turn.assistant .av{background:#10222a;color:var(--blue);border:1px solid #163842}
+  .turn.user .av{background:var(--panel-2);color:var(--brass-soft);border:1px solid var(--line)}
+  .bubble{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .bubble h3{margin:0 0 8px;font-size:15px}
+  .bubble p{margin:0 0 8px;color:var(--ink-soft)}
+  .bubble p:last-child{margin-bottom:0}
+  .bubble .lead{font-size:15px;color:var(--ink)}
+
+  .addrbar{display:flex;gap:9px;margin-top:12px}
+  .addrbar input{flex:1;background:#0c0e12;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:12px 14px;font-size:14px}
+  .addrbar input:focus{outline:none;border-color:var(--blue)}
+  .soon{font-size:11px;color:var(--ink-faint);margin-top:7px}
+  .soon b{color:var(--brass-soft)}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:9px;padding:11px 16px;font-size:13.5px;font-weight:600;transition:.13s}
+  .btn:hover{border-color:var(--blue);background:#222a33}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:var(--blue);color:#06222a;border-color:var(--blue)}
+  .btn.primary:hover{background:#5cefff}
+  .btn.brass{background:var(--brass);color:#fff;border-color:var(--brass)}
+  .btn.brass:hover{background:#765d31}
+  .btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+
+  /* ---------- extracted data box (editable) ---------- */
+  .databox{display:none}
+  .databox.show{display:block}
+  .field{display:grid;grid-template-columns:158px 1fr;gap:10px;align-items:start;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+  .field:last-child{border-bottom:0}
+  .field label{font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint);font-weight:700;padding-top:7px}
+  .field .ctl{display:flex;flex-direction:column;gap:4px}
+  .field input,.field textarea{width:100%;background:#0c0e12;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px 10px;font-size:13px;font-family:var(--sans)}
+  .field textarea{font-family:var(--mono);font-size:12px;min-height:46px;resize:vertical;line-height:1.5}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--blue)}
+  .field.unverified input,.field.unverified textarea{border-color:#5a2a2a;background:#1a1010}
+  .vrow{display:flex;align-items:center;gap:9px;font-size:10.5px}
+  .vflag{display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--verify);font-weight:700;letter-spacing:.3px;-webkit-user-select:none;user-select:none}
+  .field.verified .vflag{color:var(--ok)}
+  .vflag .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+  .src-tag{color:var(--ink-faint);font-family:var(--mono);font-size:10px}
+
+  .banner{background:#2a1414;border:1px solid #5a2a2a;border-radius:9px;padding:11px 13px;font-size:12px;color:#f1b4b4;margin-bottom:14px;line-height:1.45}
+  .banner b{color:#ff8585}
+
+  /* ---------- Apex report preview (the North Star) ---------- */
+  .reportwrap{display:none;margin-top:6px}
+  .reportwrap.show{display:block}
+  .sheet{background:var(--paper);color:var(--paperink);border-radius:6px;border:1px solid #cfc9bb;box-shadow:0 18px 40px rgba(0,0,0,.4);font-family:var(--serif);overflow:hidden}
+  .sheet .rhead{padding:26px 40px 16px;border-bottom:2px solid var(--brass);text-align:center;position:relative}
+  .sheet .rhead .co{font-family:var(--serif);font-weight:700;font-size:22px;letter-spacing:.5px;color:#1a140a}
+  .sheet .rhead .ln1{font-size:11px;color:#6b6557;letter-spacing:1px;margin-top:3px}
+  .sheet .rhead .seal2{position:absolute;left:30px;top:24px;width:46px;height:46px;border-radius:50%;border:2px solid var(--brass-soft);display:grid;place-items:center;font-weight:700;color:var(--brass);font-size:20px}
+  .sheet .rtitle{text-align:center;font-weight:700;letter-spacing:2px;font-size:15px;margin:16px 0 4px}
+  .sheet .draftband{margin:0 40px 6px;background:#fff3f3;border:1px solid #e3b4b4;color:#9a2323;font-family:var(--sans);font-size:10px;line-height:1.5;padding:8px 11px;border-radius:5px}
+  .sheet .body{padding:8px 40px 34px;font-size:12.5px;line-height:1.55}
+  .sheet .r{display:flex;gap:8px;padding:3px 0;border-bottom:1px solid #efe9da}
+  .sheet .r .k{font-weight:700;min-width:172px;text-transform:uppercase;font-size:11px;letter-spacing:.3px;color:#33302a}
+  .sheet .r .v{flex:1}
+  .sheet .v.uv{color:var(--verify)}
+  .sheet .sec{font-weight:700;letter-spacing:1px;font-size:12px;margin:14px 0 4px;border-bottom:1px solid #1a140a;padding-bottom:2px}
+  .sheet .legal{white-space:pre-wrap;font-size:11.5px;line-height:1.5}
+  .sheet ul.cv{margin:4px 0;padding-left:20px;font-size:11.5px}
+  .sheet ul.cv li{margin:2px 0}
+  .sheet .notice{font-family:var(--sans);font-size:9.5px;color:#5a5446;margin-top:6px;line-height:1.5}
+  .sheet .sigblock{margin:22px 40px 30px;padding-top:14px;border-top:1px solid #cfc9bb;display:flex;gap:30px;align-items:flex-end}
+  .sheet .sigblock .sigimg{height:54px;min-width:200px;border-bottom:1px solid #1a140a}
+  .sheet .sigblock .sigimg img{height:54px}
+  .sheet .sigmeta{font-family:var(--sans);font-size:10px;color:#5a5446}
+
+  /* ---------- signature modal ---------- */
+  .modal{position:fixed;inset:0;background:rgba(6,8,11,.78);display:none;align-items:center;justify-content:center;z-index:80}
+  .modal.show{display:flex}
+  .modal .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(520px,92vw)}
+  .modal h3{margin:0 0 4px}
+  .modal p{color:var(--ink-soft);font-size:12.5px;margin:0 0 12px}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-soft);border-radius:7px;padding:8px;font-size:12px}
+  .tabs button.on{border-color:var(--blue);color:#fff}
+  #sigPad{width:100%;height:150px;background:#fff;border-radius:8px;border:1px solid var(--line);touch-action:none;cursor:crosshair}
+  #sigType{width:100%;background:#fff;color:#111;border:1px solid var(--line);border-radius:8px;padding:14px;font-family:var(--serif);font-size:26px;display:none}
+  .modal .row{display:flex;gap:9px;margin-top:9px}
+  .modal input.nm{flex:1;background:#0c0e12;border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:9px}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:#0c0e12;border:1px solid var(--blue);color:#fff;padding:11px 17px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:90;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media print{
+    body{overflow:visible}
+    .app{display:block;height:auto}
+    .topbar,.drawer,.thread > .turn:not(#reportTurn),.databox,.btn-row,.addrbar,.soon,.offline-pill{display:none!important}
+    .main{overflow:visible}
+    .thread{max-width:none;padding:0}
+    #reportTurn .role,#reportTurn .banner{display:none}
+    #reportTurn .bubble{border:0;padding:0;background:#fff}
+    .reportwrap{margin:0}
+    .sheet{box-shadow:none;border:none;border-radius:0}
+    @page{size:Letter;margin:.5in}
+  }
+  @media (max-width:820px){.app{grid-template-columns:1fr;grid-template-rows:54px auto 1fr}.drawer{max-height:230px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="seal">A</div>
+      <div><b>Apex Title Studio</b><div class="sub">Delaware · New Castle · Kent · Sussex</div></div>
+    </div>
+    <div class="right">
+      <span class="offline-pill"><span class="ld"></span> Runs offline · data stays on this device</span>
+    </div>
+  </div>
+
+  <!-- SOURCES DRAWER -->
+  <aside class="drawer" id="drawer">
+    <h2>Source Reports</h2>
+    <!-- four source cards injected by JS -->
+    <div id="sources"></div>
+    <button class="mini-btn" id="loadSample">Load worked example (905 Shallcross)</button>
+    <button class="mini-btn" id="clearAll">Clear all sources</button>
+  </aside>
+
+  <!-- MAIN THREAD -->
+  <main class="main" id="main">
+    <div class="thread">
+
+      <!-- intro / address -->
+      <div class="turn assistant">
+        <div class="role"><span class="av">A</span> Apex Title Studio</div>
+        <div class="bubble">
+          <p class="lead">Drop your four source reports into the panel on the left, then press <b>Extract</b>. I’ll assemble them into a Delaware title report in your North-Star format — flagging every field that still needs to be confirmed against the record.</p>
+          <div class="addrbar">
+            <input id="addr" type="text" placeholder="Property address (e.g. 905 Shallcross Ave, Wilmington, DE 19806)">
+            <button class="btn" id="goBtn" title="Phase 2">Go</button>
+          </div>
+          <div class="soon">Type an address &amp; <b>Go</b> is a <b>Phase&nbsp;2</b> capability — it will pull a licensed aggregator report automatically. For now, add the source reports on the left.</div>
+          <div class="btn-row">
+            <button class="btn primary" id="extractBtn" disabled>⚡ Extract from sources</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- extracted data (assistant turn) -->
+      <div class="turn assistant" id="dataTurn" style="display:none">
+        <div class="role"><span class="av">A</span> Extracted &amp; assembled</div>
+        <div class="bubble">
+          <div class="banner">
+            <b>DRAFT — NOT A COMPLETED SEARCH.</b> Every field marked <span style="color:#ff8585">● TO VERIFY</span> was transcribed from a source report and has <b>not</b> been examined against recorded instruments. Confirm each against the Recorder of Deeds, Prothonotary, and tax/sewer records, then click its flag to mark it verified before issuing.
+          </div>
+          <div class="databox show" id="databox"></div>
+          <div class="btn-row">
+            <button class="btn" id="verifyAllBtn">Mark all verified</button>
+            <button class="btn brass" id="genDocBtn">📄 Generate Google Doc for review</button>
+            <button class="btn" id="buildReportBtn">Build report preview ↓</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- report preview + sign + pdf -->
+      <div class="turn assistant" id="reportTurn" style="display:none">
+        <div class="role"><span class="av">A</span> Apex-branded report</div>
+        <div class="bubble">
+          <div class="reportwrap show" id="reportwrap"></div>
+          <div class="btn-row">
+            <button class="btn" id="signBtn">✍ Add signature</button>
+            <button class="btn brass" id="genPdfBtn">⬇ Generate Apex PDF</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- signature modal -->
+<div class="modal" id="sigModal">
+  <div class="card">
+    <h3>Sign the report</h3>
+    <p>Your signature is embedded into the PDF, timestamped, and locks the draft as reviewed.</p>
+    <div class="tabs"><button class="on" id="tabDraw">Draw</button><button id="tabType">Type</button></div>
+    <canvas id="sigPad" width="900" height="300"></canvas>
+    <input id="sigType" placeholder="Type your name">
+    <div class="row">
+      <input class="nm" id="sigName" placeholder="Printed name (e.g. Zachary Paris, Abstractor)">
+    </div>
+    <div class="row">
+      <button class="btn" id="sigClear">Clear</button>
+      <button class="btn" id="sigCancel">Cancel</button>
+      <button class="btn primary" id="sigApply" style="margin-left:auto">Apply signature</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
+
+/* =========================================================================
+   1) REUSED PARSER  (lifted verbatim from Apex_Title_Form_Filler.html,
+      proven DOM-free by test/parser_test.mjs). Used for tabular recorder
+      indexes inside a source report.
+   ========================================================================= */
+function detectDelim(text){const l=(text.split(/\r?\n/).find(x=>x.trim())||"");
+  if(l.includes("\t"))return "\t"; if(l.includes("|"))return "|";
+  if((l.match(/,/g)||[]).length>=2)return ","; if(/\s{2,}/.test(l))return /\s{2,}/; return ",";}
+function splitLine(line,d){
+  if(d===","){const o=[];let c="",q=false;for(let i=0;i<line.length;i++){const ch=line[i];
+    if(ch==='"'){if(q&&line[i+1]==='"'){c+='"';i++;}else q=!q;}
+    else if(ch===","&&!q){o.push(c);c="";}else c+=ch;}o.push(c);return o.map(s=>s.trim());}
+  if(d instanceof RegExp)return line.trim().split(d).map(s=>s.trim());
+  return line.split(d).map(s=>s.trim());}
+function guessCanon(h){const s=(h||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(/grantor|direct|from|mortgagor|assignor|debtor/.test(s))return "grantor";
+  if(/grantee|indirect|mortgagee|assignee|creditor|party|^to$/.test(s))return "grantee";
+  if(/(rec|record|file|recorded)date|^date$|recdate|dateofrecord/.test(s))return "recDate";
+  if(/doctype|documenttype|^type$|instrumenttype|kind|recordtype/.test(s))return "docType";
+  if(/book|volume|^vol$|liber/.test(s))return "book";
+  if(/^page$|^pg$|folio/.test(s))return "page";
+  if(/instrument|docnumber|documentnumber|docno|doc#|cfn|reception|filenumber|recordingnumber/.test(s))return "instrument";
+  if(/amount|consideration|debt|judgmentamount|principal/.test(s))return "amount";
+  if(/legal|description|property|subdivision|lot|parcel/.test(s))return "legal";
+  return "skip";}
+function looksHeader(cells){let known=0;cells.forEach(c=>{if(guessCanon(c)!=="skip")known++;});
+  const datey=cells.some(c=>/\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}/.test(c));
+  return known>=2 && !datey;}
+function parseText(text){const rows=text.split(/\r?\n/).map(r=>r.replace(/\s+$/,"")).filter(r=>r.trim());
+  if(!rows.length)return null; const d=detectDelim(text); const grid=rows.map(r=>splitLine(r,d));
+  const width=Math.max(...grid.map(r=>r.length)); grid.forEach(r=>{while(r.length<width)r.push("");});
+  const hasHeader=looksHeader(grid[0]); const header=hasHeader?grid[0]:grid[0].map((_,i)=>`Column ${i+1}`);
+  const map=header.map((h,i)=>hasHeader?guessCanon(h):"skip"); return {grid,header,hasHeader,map,width};}
+function docFull(dt){const s=(dt||"").toUpperCase().replace(/[^A-Z ]/g,"");
+  const m={WD:"Warranty Deed",QC:"Quitclaim Deed",QCD:"Quitclaim Deed",SW:"Special Warranty Deed",SWD:"Special Warranty Deed",SD:"Sheriff's Deed",CD:"Corporate Deed",TD:"Trustee's Deed",BD:"Bargain & Sale Deed",GD:"Gift Deed",EXEC:"Executor's Deed",M:"Mortgage",MTG:"Mortgage",DOT:"Deed of Trust"};
+  if(m[s.trim()])return m[s.trim()];
+  if(/DEED OF TRUST/.test(s))return "Deed of Trust"; if(/MORTGAGE/.test(s))return "Mortgage";
+  if(/WARRANTY/.test(s))return "Warranty Deed"; if(/QUIT/.test(s))return "Quitclaim Deed";
+  if(/SHERIFF/.test(s))return "Sheriff's Deed"; if(/DEED/.test(s))return "Deed"; return dt||"";}
+function classify(dt){const s=(dt||"").toUpperCase(); const has=(...a)=>a.some(x=>s.includes(x));
+  if(has("SATISF","RELEAS","DISCHARG"))return "mortSatisfied";
+  if(has("ASSIGN")||/\bASG\b/.test(s))return "mortAssign";
+  if(has("MORTGAGE","DEED OF TRUST")||/\bMTG\b|\bDOT\b|^M$/.test(s))return "mortCurrent";
+  if(has("FEDERAL","IRS")||/\bFTL\b/.test(s))return "lienFederal";
+  if(has("JUDG"))return "lienCivil";
+  if(has("TAX LIEN","MUNICIP")||/\bTAX\b/.test(s))return "lienTax";
+  if(has("LIEN","UCC","LIS PEND","MECH"))return "lienNotes";
+  if(has("DEED")||/\bWD\b|\bQC\b|\bQCD\b|\bSW\b|\bSWD\b|\bSD\b|\bCD\b|\bTD\b|\bBD\b|\bGD\b|\bEXEC\b/.test(s))return "chain";
+  return "review";}
+function sortKey(s){const m=String(s||"").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})|(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return 0; if(m[3]){let y=+m[3];if(y<100)y+=y>40?1900:2000;return y*10000+(+m[1])*100+(+m[2]);}
+  return (+m[4])*10000+(+m[5])*100+(+m[6]);}
+
+/* =========================================================================
+   2) EXTRACTION LAYER  (SWAP POINT)
+      extractSource(text, sourceType) -> NormalizedRecord[]
+      composeNorthStar(records, ctx) -> reportModel
+      Deterministic today. To upgrade, replace the body of extractSource()
+      with a call to the fine-tuned parser model — the UI never changes.
+   ========================================================================= */
+const SOURCES=[
+  {id:"recorder",n:"1",name:"Recorder of Deeds",desc:"Chain of title, mortgages, satisfactions, assignments, easements. Paste the grantor/grantee index, or drop the recorder export."},
+  {id:"tax",n:"2",name:"Assessment / Tax",desc:"Parcel, owner, tax status (current/delinquent), municipal water & sewer liens."},
+  {id:"court",n:"3",name:"Prothonotary Court",desc:"Civil judgments against the owner(s); docket numbers and dates."},
+  {id:"statelien",n:"4",name:"State Tax-Lien",desc:"Delaware state tax liens filed against current or prior owners."},
+];
+const store={}; SOURCES.forEach(s=>store[s.id]="");
+
+// labeled-field reader: pulls "LABEL: value" style fields out of a report (e.g. an aggregator PDF or the North-Star example)
+function field(text,labels){
+  for(const lb of labels){
+    const re=new RegExp(lb.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\s*[:#]\\s*([^\\n]+)","i");
+    const m=text.match(re); if(m&&m[1].trim()&&!/^_+$/.test(m[1].trim()))return m[1].trim();
+  } return "";
+}
+function moneyLines(text,kw){ // collect "MORTGAGE: $x from A to B ..." style lines
+  const out=[]; text.split(/\r?\n/).forEach(l=>{ if(new RegExp("^\\s*"+kw,"i").test(l)){
+    const v=l.replace(new RegExp("^\\s*"+kw+"\\s*[:#]?","i"),"").trim();
+    if(v && !/^none\b/i.test(v))out.push(v);} }); return out;
+}
+
+function extractSource(text,sourceType){
+  // returns {records:[{route,grantor,grantee,recDate,docType,book,page,instrument,amount,legal}], fields:{...}}
+  const res={records:[],fields:{}};
+  if(!text||!text.trim())return res;
+
+  // (a) tabular index rows -> isolate the delimited block, then use the proven parser
+  const lines=text.split(/\r?\n/);
+  const tabLines=lines.filter(l=>/\t|\|/.test(l)||(l.match(/,/g)||[]).length>=4);
+  if(tabLines.length>=2){
+    const st=parseText(tabLines.join("\n")); if(st){
+      const rows=st.hasHeader?st.grid.slice(1):st.grid;
+      rows.forEach(r=>{const o={};st.map.forEach((k,i)=>{if(k&&k!=="skip"&&r[i])o[k]=r[i];});
+        if(o.grantor||o.grantee||o.docType){o.route=classify(o.docType);res.records.push(o);}});
+    }
+  }
+  // (b) labeled fields (aggregator / North-Star style) — useful for any source
+  const f=res.fields;
+  f.property = field(text,["PROPERTY ADDRESS","PROPERTY","Property Report For","known as"]);
+  f.parcelNumber = field(text,["PARCEL NUMBER","APN","PARCEL"]);
+  f.hundred = field(text,["HUNDRED"]);
+  f.condoSubdivision = field(text,["CONDOMINIUM/SUBDIVISION","SUBDIVISION","TRACT NAME"]);
+  f.unitLot = field(text,["UNIT/LOT NUMBER","UNIT/LOT","LOT"]);
+  f.block = field(text,["BLOCK"]);
+  f.section = field(text,["SECTION"]);
+  f.owner = field(text,["SELLERS/OWNERS","CURRENT OWNER","OWNER","MOST RECENT OWNER OR RESIDENT"]);
+  f.buyer = field(text,["BUYERS/BORROWERS","BUYER"]);
+  f.deedRecord = field(text,["DEED RECORD","DEED REFERENCE","INSTRUMENT #","INSTRUMENT"]);
+  f.legal = field(text,["LEGAL DESCRIPTION","LEGAL"]);
+  // tax-source specifics
+  if(sourceType==="tax"){
+    const ts=text.match(/\b(delinquent|current|paid)\b/i); if(ts)f.taxStatus=ts[1];
+    f.assessedValue=field(text,["ASSESSED VALUE","ESTIMATED VALUE"]);
+  }
+  // mortgage / judgment / lien narrative lines (court & recorder & aggregator)
+  moneyLines(text,"MORTGAGE").forEach(v=>res.records.push({route:"mortCurrent",narrative:v}));
+  moneyLines(text,"ASSIGNMENT").forEach(v=>res.records.push({route:"mortAssign",narrative:v}));
+  moneyLines(text,"JUDGMENT").forEach(v=>res.records.push({route:"lienCivil",narrative:v}));
+  moneyLines(text,"FEDERAL TAX LIEN").forEach(v=>res.records.push({route:"lienFederal",narrative:v}));
+  moneyLines(text,"MECHANICS LIEN").forEach(v=>res.records.push({route:"lienNotes",narrative:"Mechanics lien: "+v}));
+  return res;
+}
+
+// merge all four sources into one North-Star report model. Every value carries {v, verified, source}.
+function composeNorthStar(){
+  const V=(v,source)=>({v:v||"",verified:false,source:source||""});
+  const model={
+    searchDate:V("",""), indexDate:V("",""),
+    property:V("",""), condoSubdivision:V("",""), hundred:V("",""),
+    parcelNumber:V("",""), unitLot:V("",""), block:V("",""), section:V("",""),
+    sellersOwners:V("",""), buyersBorrowers:V("",""), deedRecord:V("",""),
+    legalDescription:V("",""),
+    chain:[], mortgages:[], assignments:[], satisfied:[], judgments:[], federalLien:[], otherLiens:[],
+    taxStatus:V("",""),
+  };
+  const seen={};
+  function setIf(key,val,source){ if(val && !model[key].v){model[key]={v:val,verified:false,source}; } }
+
+  SOURCES.forEach(s=>{
+    const txt=store[s.id]; if(!txt||!txt.trim())return;
+    const ex=extractSource(txt,s.id); const f=ex.fields; const tag=s.name;
+    setIf("property",f.property,tag); setIf("parcelNumber",f.parcelNumber,tag);
+    setIf("hundred",f.hundred,tag); setIf("condoSubdivision",f.condoSubdivision,tag);
+    setIf("unitLot",f.unitLot,tag); setIf("block",f.block,tag); setIf("section",f.section,tag);
+    setIf("sellersOwners",f.owner,tag); setIf("buyersBorrowers",f.buyer,tag);
+    setIf("deedRecord",f.deedRecord,tag); setIf("legalDescription",f.legal,tag);
+    if(f.taxStatus) setIf("taxStatus",f.taxStatus.replace(/^\w/,c=>c.toUpperCase()),tag);
+
+    ex.records.forEach(r=>{
+      const line = r.narrative || `${r.grantor||"?"} → ${r.grantee||"?"} — ${docFull(r.docType)||"Deed"}${r.recDate?", "+r.recDate:""}${(r.book||r.page)?`, Bk ${r.book||"—"}/Pg ${r.page||"—"}`:""}${r.instrument?` (Instr ${r.instrument})`:""}`;
+      const key=r.route+"|"+line; if(seen[key])return; seen[key]=1;
+      const item={line,verified:false,source:tag,recDate:r.recDate||""};
+      if(r.route==="chain")model.chain.push(item);
+      else if(r.route==="mortCurrent")model.mortgages.push(item);
+      else if(r.route==="mortAssign")model.assignments.push(item);
+      else if(r.route==="mortSatisfied")model.satisfied.push(item);
+      else if(r.route==="lienCivil")model.judgments.push(item);
+      else if(r.route==="lienFederal")model.federalLien.push(item);
+      else if(r.route==="lienTax"||r.route==="lienNotes")model.otherLiens.push(item);
+    });
+  });
+  model.chain.sort((a,b)=>sortKey(b.recDate)-sortKey(a.recDate));
+  return model;
+}
+
+/* =========================================================================
+   3) UI — sources drawer
+   ========================================================================= */
+function renderSources(){
+  $("#sources").innerHTML=SOURCES.map(s=>`
+    <div class="src ${store[s.id]?"loaded":""}" data-id="${s.id}">
+      <div class="h"><span class="n">${s.n}</span> ${esc(s.name)}</div>
+      <div class="desc">${esc(s.desc)}</div>
+      <div class="drop">⤓ Drop file or <span class="paste-toggle" data-id="${s.id}">paste text</span></div>
+      <div class="status">✓ loaded (${(store[s.id].length/1024).toFixed(1)} KB)<span class="x" data-id="${s.id}" title="remove">✕</span></div>
+      <textarea data-id="${s.id}" placeholder="Paste the ${esc(s.name)} content here…">${esc(store[s.id])}</textarea>
+    </div>`).join("");
+  wireSources(); updateExtractBtn();
+}
+function setSource(id,text){store[id]=text||"";renderSources();}
+function updateExtractBtn(){const any=Object.values(store).some(v=>v.trim());$("#extractBtn").disabled=!any;}
+
+function wireSources(){
+  $$(".src").forEach(el=>{
+    const id=el.dataset.id;
+    el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("drag");});
+    el.addEventListener("dragleave",()=>el.classList.remove("drag"));
+    el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("drag");
+      const f=e.dataTransfer.files[0]; if(!f)return; readFileInto(id,f);});
+  });
+  $$(".paste-toggle").forEach(t=>t.onclick=()=>{const ta=document.querySelector(`textarea[data-id="${t.dataset.id}"]`);ta.style.display="block";ta.focus();});
+  $$(".src textarea").forEach(ta=>ta.addEventListener("input",()=>{store[ta.dataset.id]=ta.value;updateExtractBtn();
+    const card=ta.closest(".src");card.classList.toggle("loaded",!!ta.value.trim());}));
+  $$(".src .status .x").forEach(x=>x.onclick=()=>setSource(x.dataset.id,""));
+}
+
+function readFileInto(id,file){
+  const name=(file.name||"").toLowerCase();
+  if(name.endsWith(".pdf")){ extractPdf(file).then(txt=>{setSource(id,txt);toast(`Read ${file.name}`);})
+      .catch(()=>{toast("Couldn’t read that PDF offline — open it and paste the text.");}); return; }
+  const rd=new FileReader();
+  rd.onload=()=>{ let txt=rd.result;
+    if(name.endsWith(".docx")){ txt=stripDocx(rd.result); }
+    setSource(id, typeof txt==="string"?txt:""); toast(`Loaded ${file.name}`); };
+  if(name.endsWith(".docx")) rd.readAsBinaryString(file); else rd.readAsText(file);
+}
+// best-effort DOCX text (no library): pull readable runs from word/document.xml inside the zip bytes
+function stripDocx(bin){
+  try{ const x=bin.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+    if(x&&x.length)return x.map(s=>s.replace(/<[^>]+>/g,"")).join(" ").replace(/\s+\n/g,"\n");
+  }catch(e){}
+  // fallback: keep printable ascii
+  return bin.replace(/[^\x09\x0A\x0D\x20-\x7E]+/g," ").replace(/\s{2,}/g," ");
+}
+// PDF text via pdf.js if reachable (online); otherwise reject -> user pastes
+function extractPdf(file){
+  return new Promise((resolve,reject)=>{
+    if(!window.pdfjsLib){
+      const sc=document.createElement("script");
+      sc.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      sc.onload=()=>run(); sc.onerror=()=>reject(); document.head.appendChild(sc);
+    } else run();
+    function run(){
+      try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; }catch(e){}
+      const fr=new FileReader();
+      fr.onload=async()=>{ try{
+        const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(fr.result)}).promise;
+        let out="";
+        for(let p=1;p<=pdf.numPages;p++){const pg=await pdf.getPage(p);const tc=await pg.getTextContent();
+          out+=tc.items.map(i=>i.str).join(" ")+"\n";}
+        resolve(out);
+      }catch(e){reject(e);} };
+      fr.onerror=reject; fr.readAsArrayBuffer(file);
+    }
+  });
+}
+
+/* =========================================================================
+   4) UI — extracted data box (editable, verifiable)
+   ========================================================================= */
+let MODEL=null;
+const SCALAR=[
+  ["searchDate","Search Date"],["indexDate","Index Date"],["property","Property"],
+  ["condoSubdivision","Condo / Subdivision"],["hundred","Hundred"],["parcelNumber","Parcel #"],
+  ["unitLot","Unit / Lot"],["block","Block"],["section","Section"],
+  ["sellersOwners","Sellers / Owners"],["buyersBorrowers","Buyers / Borrowers"],
+  ["deedRecord","Deed Record"],["taxStatus","Tax Status"],["legalDescription","Legal Description"],
+];
+const LISTS=[
+  ["chain","Chain / Direct Conveyances"],["mortgages","Mortgages"],["assignments","Assignments"],
+  ["satisfied","Satisfactions"],["judgments","Judgments"],["federalLien","Federal Tax Lien"],
+  ["otherLiens","Other Liens / Notices"],
+];
+function fieldRow(key,label,obj){
+  const big=key==="legalDescription";
+  const ctl=big
+    ? `<textarea data-k="${key}">${esc(obj.v)}</textarea>`
+    : `<input data-k="${key}" value="${esc(obj.v)}">`;
+  return `<div class="field ${obj.verified?"verified":"unverified"}" data-row="${key}">
+      <label>${esc(label)}</label>
+      <div class="ctl">${ctl}
+        <div class="vrow"><span class="vflag" data-k="${key}"><span class="dot"></span>${obj.verified?"VERIFIED":"TO VERIFY"}</span>
+          ${obj.source?`<span class="src-tag">source: ${esc(obj.source)}</span>`:`<span class="src-tag">no source — enter manually</span>`}</div>
+      </div></div>`;
+}
+function listBlock(key,label,arr){
+  const rows=arr.length?arr.map((it,i)=>`
+    <div class="field ${it.verified?"verified":"unverified"}" data-list="${key}" data-i="${i}">
+      <label>${i===0?esc(label):""}</label>
+      <div class="ctl"><input data-list="${key}" data-i="${i}" value="${esc(it.line)}">
+        <div class="vrow"><span class="vflag" data-list="${key}" data-i="${i}"><span class="dot"></span>${it.verified?"VERIFIED":"TO VERIFY"}</span>
+          <span class="src-tag">source: ${esc(it.source||"")}</span></div></div></div>`).join("")
+    : `<div class="field" data-empty="${key}"><label>${esc(label)}</label><div class="ctl"><input data-empty="${key}" placeholder="NONE FOUND — add an entry"></div></div>`;
+  return rows;
+}
+function renderData(){
+  if(!MODEL)return;
+  let h=SCALAR.map(([k,l])=>fieldRow(k,l,MODEL[k])).join("");
+  h+=LISTS.map(([k,l])=>listBlock(k,l,MODEL[k])).join("");
+  $("#databox").innerHTML=h;
+  // wire edits
+  $$('#databox input[data-k], #databox textarea[data-k]').forEach(el=>el.addEventListener("input",()=>{MODEL[el.dataset.k].v=el.value;}));
+  $$('#databox .vflag[data-k]').forEach(el=>el.onclick=()=>{const k=el.dataset.k;MODEL[k].verified=!MODEL[k].verified;renderData();});
+  $$('#databox input[data-list]').forEach(el=>el.addEventListener("input",()=>{MODEL[el.dataset.list][+el.dataset.i].line=el.value;}));
+  $$('#databox .vflag[data-list]').forEach(el=>el.onclick=()=>{const a=MODEL[el.dataset.list][+el.dataset.i];a.verified=!a.verified;renderData();});
+  $$('#databox input[data-empty]').forEach(el=>el.addEventListener("change",()=>{if(el.value.trim()){MODEL[el.dataset.empty].push({line:el.value.trim(),verified:true,source:"manual",recDate:""});renderData();}}));
+}
+
+/* =========================================================================
+   5) The Apex North-Star report preview  +  PDF "skill"
+   ========================================================================= */
+let SIGNATURE=null; // {dataUrl?, typed?, name, when}
+function anyUnverified(){
+  const s=SCALAR.some(([k])=>MODEL[k].v&&!MODEL[k].verified);
+  const l=LISTS.some(([k])=>MODEL[k].some(it=>!it.verified));
+  return s||l;
+}
+function row(k,v,uv){return `<div class="r"><span class="k">${esc(k)}</span><span class="v ${uv?"uv":""}">${v?esc(v):"—"}</span></div>`;}
+function listHtml(arr){return arr.length?`<ul class="cv">${arr.map(it=>`<li class="${it.verified?"":""}" ${it.verified?"":'style="color:var(--verify)"'}>${esc(it.line)}</li>`).join("")}</ul>`:`<div style="font-size:11.5px;color:#5a5446">NONE FOUND</div>`;}
+function buildReport(){
+  const M=MODEL, uv=o=>o.v&&!o.verified;
+  const draft=anyUnverified();
+  const sig = SIGNATURE ? `
+    <div class="sigblock">
+      <div><div class="sigimg">${SIGNATURE.dataUrl?`<img src="${SIGNATURE.dataUrl}">`:`<span style="font-family:var(--serif);font-size:26px">${esc(SIGNATURE.typed||"")}</span>`}</div>
+        <div class="sigmeta">${esc(SIGNATURE.name||"")} — Abstractor</div></div>
+      <div class="sigmeta">Signed ${esc(SIGNATURE.when)}<br>Reviewed &amp; certified by signatory.</div>
+    </div>` : "";
+  const html=`
+  <div class="sheet" id="sheet">
+    <div class="rhead">
+      <div class="seal2">A</div>
+      <div class="co">Apex Abstracts</div>
+      <div class="ln1">A Title Abstracting Company · New Castle · Kent · Sussex, Delaware</div>
+    </div>
+    <div class="rtitle">TITLE SEARCH REPORT</div>
+    ${draft?`<div class="draftband"><b>DRAFT — NOT A COMPLETED SEARCH.</b> Fields shown in red were transcribed from source reports and have not been verified against recorded instruments. Remove this banner only after the search is complete and certified.</div>`:""}
+    <div class="body">
+      ${row("Search Date",M.searchDate.v,uv(M.searchDate))}
+      ${row("Index Date",M.indexDate.v,uv(M.indexDate))}
+      ${row("Property",M.property.v,uv(M.property))}
+      ${row("Condo / Subdivision",M.condoSubdivision.v,uv(M.condoSubdivision))}
+      ${row("Hundred",M.hundred.v,uv(M.hundred))}
+      ${row("Parcel Number",M.parcelNumber.v,uv(M.parcelNumber))}
+      ${row("Unit / Lot",M.unitLot.v,uv(M.unitLot))}
+      ${row("Block",M.block.v,uv(M.block))}
+      ${row("Section",M.section.v,uv(M.section))}
+      ${row("Sellers / Owners",M.sellersOwners.v,uv(M.sellersOwners))}
+      ${row("Buyers / Borrowers",M.buyersBorrowers.v,uv(M.buyersBorrowers))}
+      ${row("Deed Record",M.deedRecord.v,uv(M.deedRecord))}
+
+      <div class="sec">LEGAL DESCRIPTION</div>
+      <div class="legal ${uv(M.legalDescription)?"":""}" ${uv(M.legalDescription)?'style="color:var(--verify)"':""}>${M.legalDescription.v?esc(M.legalDescription.v):"[TO BE VERIFIED — pull recorded instrument]"}</div>
+
+      <div class="sec">CHAIN OF TITLE / DIRECT CONVEYANCES</div>${listHtml(M.chain)}
+      <div class="sec">MORTGAGES / DEEDS OF TRUST</div>${listHtml(M.mortgages)}
+      <div class="sec">ASSIGNMENTS</div>${listHtml(M.assignments)}
+      <div class="sec">SATISFACTIONS / RELEASES</div>${listHtml(M.satisfied)}
+      <div class="sec">JUDGMENTS</div>${listHtml(M.judgments)}
+      <div class="sec">FEDERAL TAX LIEN</div>${listHtml(M.federalLien)}
+      <div class="sec">OTHER LIENS / MECHANICS / UCC / NOTICES</div>${listHtml(M.otherLiens)}
+
+      <div class="sec">TAX STATUS</div>${row("Property Taxes",M.taxStatus.v,uv(M.taxStatus))}
+
+      <div class="notice"><b>NOTICE:</b> This form does not constitute title insurance. Liability is assumed by the Company solely in its capacity as Abstractor for its negligence, mistakes or omissions in a sum not exceeding Five Hundred Dollars unless used in conjunction with a title insurance policy written through this company.</div>
+      <div class="notice"><b>NOTICE:</b> No certification is made as to taxes and sewer charges without a County tax certification being ordered. Subject, further, to any/all applicable covenants, conditions, easements, rights-of-way, reservations, restrictions, and agreements of record.</div>
+    </div>
+    ${sig}
+  </div>`;
+  $("#reportwrap").innerHTML=html;
+  $("#reportTurn").style.display="";
+}
+
+/* =========================================================================
+   6) Google Doc generation  (one online step — see ARCHITECTURE.md)
+      Offline-safe default: build a Google-Docs-importable .doc (HTML/Word)
+      and open the Docs importer. A hosted Apps Script / Docs API can replace
+      this to populate the Drive template directly.
+   ========================================================================= */
+function googleDocHtml(){
+  const M=MODEL; const r=(k,o)=>`<tr><td style="font-weight:bold;width:30%">${k}</td><td style="${o.verified?"":"color:#c00"}">${esc(o.v||"[TO BE VERIFIED]")}</td></tr>`;
+  const li=arr=>arr.length?`<ul>${arr.map(i=>`<li style="${i.verified?"":"color:#c00"}">${esc(i.line)}</li>`).join("")}</ul>`:"<p>NONE FOUND</p>";
+  return `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset="utf-8"></head>
+  <body style="font-family:'Times New Roman',serif">
+  <h1 style="text-align:center">Apex Abstracts — Title Search Report</h1>
+  <p style="text-align:center;color:#c00"><b>DRAFT for leadership review — fields in red are unverified.</b></p>
+  <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
+  ${["searchDate","indexDate","property","condoSubdivision","hundred","parcelNumber","unitLot","block","section","sellersOwners","buyersBorrowers","deedRecord","taxStatus"].map(k=>r(k,M[k])).join("")}
+  </table>
+  <h3>Legal Description</h3><p style="${M.legalDescription.verified?"":"color:#c00"}">${esc(M.legalDescription.v||"[TO BE VERIFIED]")}</p>
+  <h3>Chain of Title / Direct Conveyances</h3>${li(M.chain)}
+  <h3>Mortgages</h3>${li(M.mortgages)}<h3>Assignments</h3>${li(M.assignments)}
+  <h3>Satisfactions</h3>${li(M.satisfied)}<h3>Judgments</h3>${li(M.judgments)}
+  <h3>Federal Tax Lien</h3>${li(M.federalLien)}<h3>Other Liens</h3>${li(M.otherLiens)}
+  </body></html>`;
+}
+function fileBase(){const a=(MODEL.property.v||"Property").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,48);
+  return `Apex_${a}_${new Date().toISOString().slice(0,10)}`;}
+function genGoogleDoc(){
+  const blob=new Blob([googleDocHtml()],{type:"application/msword"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileBase()+"_REVIEW.doc";a.click();URL.revokeObjectURL(a.href);
+  toast("Review doc generated — open it in Google Docs (File ▸ Open ▸ Upload) for shared sign-off.");
+  try{window.open("https://docs.google.com/document/u/0/","_blank");}catch(e){}
+}
+
+/* =========================================================================
+   7) signature pad
+   ========================================================================= */
+let drawing=false,sigMode="draw",ctx=null;
+function initPad(){const c=$("#sigPad");ctx=c.getContext("2d");ctx.lineWidth=2.6;ctx.lineCap="round";ctx.strokeStyle="#10131a";
+  const pos=e=>{const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return [(t.clientX-r.left)*(c.width/r.width),(t.clientY-r.top)*(c.height/r.height)];};
+  const down=e=>{drawing=true;const [x,y]=pos(e);ctx.beginPath();ctx.moveTo(x,y);e.preventDefault();};
+  const move=e=>{if(!drawing)return;const [x,y]=pos(e);ctx.lineTo(x,y);ctx.stroke();e.preventDefault();};
+  const up=()=>drawing=false;
+  c.addEventListener("mousedown",down);c.addEventListener("mousemove",move);window.addEventListener("mouseup",up);
+  c.addEventListener("touchstart",down,{passive:false});c.addEventListener("touchmove",move,{passive:false});c.addEventListener("touchend",up);
+}
+function clearPad(){if(ctx)ctx.clearRect(0,0,$("#sigPad").width,$("#sigPad").height);$("#sigType").value="";}
+
+/* =========================================================================
+   8) wire up
+   ========================================================================= */
+function init(){
+  renderSources(); initPad();
+
+  $("#extractBtn").onclick=()=>{
+    MODEL=composeNorthStar();
+    MODEL.searchDate.v = MODEL.searchDate.v || ""; // left for abstractor
+    $("#dataTurn").style.display=""; renderData();
+    $("#dataTurn").scrollIntoView({behavior:"smooth",block:"start"});
+    toast("Extracted — review the red fields, verify each, then generate the review doc.");
+  };
+  $("#verifyAllBtn").onclick=()=>{ if(!MODEL)return;
+    if(!confirm("Mark EVERY field verified? Only do this once you've confirmed them against the record."))return;
+    SCALAR.forEach(([k])=>MODEL[k].verified=true); LISTS.forEach(([k])=>MODEL[k].forEach(it=>it.verified=true)); renderData(); };
+  $("#genDocBtn").onclick=()=>{ if(!MODEL)return; genGoogleDoc(); };
+  $("#buildReportBtn").onclick=()=>{ if(!MODEL)return; buildReport(); $("#reportTurn").scrollIntoView({behavior:"smooth",block:"start"}); };
+
+  // signature modal
+  $("#signBtn").onclick=()=>{ if(!MODEL){return;} $("#sigModal").classList.add("show"); };
+  $("#sigCancel").onclick=()=>$("#sigModal").classList.remove("show");
+  $("#sigClear").onclick=clearPad;
+  $("#tabDraw").onclick=()=>{sigMode="draw";$("#tabDraw").classList.add("on");$("#tabType").classList.remove("on");$("#sigPad").style.display="";$("#sigType").style.display="none";};
+  $("#tabType").onclick=()=>{sigMode="type";$("#tabType").classList.add("on");$("#tabDraw").classList.remove("on");$("#sigPad").style.display="none";$("#sigType").style.display="block";};
+  $("#sigApply").onclick=()=>{
+    const name=$("#sigName").value.trim();
+    if(!name){toast("Enter the printed name.");return;}
+    const when=new Date().toLocaleString("en-US");
+    if(sigMode==="draw"){ SIGNATURE={dataUrl:$("#sigPad").toDataURL("image/png"),name,when}; }
+    else{ const t=$("#sigType").value.trim(); if(!t){toast("Type a signature.");return;} SIGNATURE={typed:t,name,when}; }
+    $("#sigModal").classList.remove("show"); buildReport(); toast("Signed — report locked. Generate the Apex PDF.");
+  };
+
+  $("#genPdfBtn").onclick=()=>{
+    if(!MODEL){return;}
+    if(anyUnverified() && !confirm("Some fields are still unverified (shown in red). Generate the PDF anyway? It will keep the DRAFT banner."))return;
+    buildReport();
+    const t=document.title; document.title=fileBase();
+    window.addEventListener("afterprint",()=>{document.title=t;},{once:true});
+    setTimeout(()=>window.print(),60);
+  };
+
+  // address bar (Phase 2 placeholder)
+  $("#goBtn").onclick=()=>toast("Auto-retrieval by address is Phase 2 — it will pull a licensed aggregator report. For now, drop the four sources on the left.");
+
+  // sample loader (the 905 Shallcross worked example)
+  $("#loadSample").onclick=loadSample;
+  $("#clearAll").onclick=()=>{SOURCES.forEach(s=>store[s.id]="");renderSources();$("#dataTurn").style.display="none";$("#reportTurn").style.display="none";MODEL=null;SIGNATURE=null;toast("Cleared");};
+}
+
+function loadSample(){
+  store.recorder=
+`PROPERTY: 905 Shallcross Ave, Wilmington, Delaware 19806
+PARCEL NUMBER: 26-021.30-165
+SELLERS/OWNERS: G & J Forest Glen, LLC
+DEED RECORD: Instrument 20250522-0034213
+Grantor\tGrantee\tRecord Date\tDoc Type\tInstrument\tAmount
+Zachary Paris\tG & J Forest Glen LLC\t05/22/2025\tWarranty Deed\t20250522-0034213\t
+Paris Properties LLC\tZachary Paris\t12/17/2021\tQuitclaim Deed\t20211217-0144948\t
+Fedale Property 3 LLC\tZachary Paris\t07/03/2019\tWarranty Deed\t104682\t$178,500
+MORTGAGE: $142,800 from Zachary Paris to Meridian Bank, recorded 12/23/2019 in Instrument 104691
+ASSIGNMENT: none
+JUDGMENT: none`;
+  store.tax=
+`PROPERTY ADDRESS: 905 Shallcross Ave Wilmington DE 19806
+PARCEL NUMBER: 26-021.30-165
+ASSESSED VALUE: $311,700
+Tax status: Current
+HUNDRED: City of Wilmington`;
+  store.court=`JUDGMENT: none of record as of search date`;
+  store.statelien=`FEDERAL TAX LIEN: NONE\nState tax lien: NONE`;
+  renderSources(); toast("Loaded the 905 Shallcross worked example — now press Extract.");
+}
+
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
+</body>
+</html>
