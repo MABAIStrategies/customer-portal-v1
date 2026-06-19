@@ -370,9 +370,13 @@ function extractSource(text,sourceType){
   const res={records:[],fields:{}};
   if(!text||!text.trim())return res;
 
-  // (a) tabular index rows -> isolate the delimited block, then use the proven parser
+  // (a) tabular index rows -> isolate ONE consistent delimiter's lines (tab > pipe > comma)
+  //     so comma-heavy prose (e.g. a metes-and-bounds legal description) can't corrupt
+  //     delimiter detection for a tab-separated recorder index.
   const lines=text.split(/\r?\n/);
-  const tabLines=lines.filter(l=>/\t|\|/.test(l)||(l.match(/,/g)||[]).length>=4);
+  let tabLines=lines.filter(l=>l.includes("\t"));
+  if(tabLines.length<2){const pl=lines.filter(l=>l.includes("|"));if(pl.length>=2)tabLines=pl;}
+  if(tabLines.length<2){const cl=lines.filter(l=>(l.match(/,/g)||[]).length>=4);if(cl.length>=2)tabLines=cl;}
   if(tabLines.length>=2){
     const st=parseText(tabLines.join("\n")); if(st){
       const rows=st.hasHeader?st.grid.slice(1):st.grid;
