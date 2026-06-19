@@ -34,6 +34,9 @@
   .topbar .right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-faint)}
   .offline-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px}
   .offline-pill .ld{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  .tb-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--ink-soft);border-radius:20px;padding:5px 13px;font-size:12px;font-weight:600}
+  .tb-btn:hover{border-color:var(--blue);color:#fff}
+  .tb-btn.on{border-color:#2f4a3a;color:#74d39a;background:#13201a}
 
   /* ---------- sources drawer ---------- */
   .drawer{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:14px 12px}
@@ -170,6 +173,7 @@
       <div><b>Apex Title Studio</b><div class="sub">Delaware · New Castle · Kent · Sussex</div></div>
     </div>
     <div class="right">
+      <button class="tb-btn" id="gdocCfgTop" title="Connect this tool to your Google Drive">⚙ Connect Google Doc</button>
       <span class="offline-pill"><span class="ld"></span> Runs offline · data stays on this device</span>
     </div>
   </div>
@@ -648,10 +652,12 @@ function fileBase(){const a=(MODEL.property.v||"Property").replace(/[^\w\s-]/g,"
 const GDOC_KEY="apex_gdoc_endpoint";
 function getEndpoint(){try{return localStorage.getItem(GDOC_KEY)||"";}catch(e){return "";}}
 function setEndpoint(u){try{u?localStorage.setItem(GDOC_KEY,u):localStorage.removeItem(GDOC_KEY);}catch(e){}}
+function updateGdocBtn(){const b=document.getElementById("gdocCfgTop");if(!b)return;
+  const on=!!getEndpoint();b.classList.toggle("on",on);b.textContent=on?"✓ Google Doc connected":"⚙ Connect Google Doc";}
 function configEndpoint(){
-  const v=prompt("Apex Google-Doc endpoint — paste your Apps Script Web App URL (ends in /exec).\nSee integrations/google-doc/README.md to deploy it (≈3 min).\nLeave blank to clear and use the offline .doc download instead.",getEndpoint());
-  if(v===null)return; setEndpoint(v.trim());
-  toast(v.trim()?"Endpoint saved.":"Cleared — will download an importable .doc.");
+  const v=prompt("Connect Apex Title Studio to your Google Drive.\n\nPaste your Apps Script Web App URL (ends in /exec).\nSee integrations/google-doc/README.md to deploy it (≈3 min).\nLeave blank to clear and use the offline .doc download instead.",getEndpoint());
+  if(v===null)return; setEndpoint(v.trim()); updateGdocBtn();
+  toast(v.trim()?"Connected — “Generate Google Doc” now creates a Doc in your Drive.":"Cleared — will download an importable .doc.");
 }
 // builds the {{PLACEHOLDER}} -> value map the Apps Script fills; unverified values keep a red [TO VERIFY] flag
 function gdocTokens(){
@@ -722,6 +728,8 @@ function init(){
     SCALAR.forEach(([k])=>MODEL[k].verified=true); LISTS.forEach(([k])=>MODEL[k].forEach(it=>it.verified=true)); renderData(); };
   $("#genDocBtn").onclick=()=>{ if(!MODEL)return; genGoogleDoc(); };
   $("#gdocCfg").onclick=configEndpoint;
+  $("#gdocCfgTop").onclick=configEndpoint;
+  updateGdocBtn();
   $("#buildReportBtn").onclick=()=>{ if(!MODEL)return; buildReport(); $("#reportTurn").scrollIntoView({behavior:"smooth",block:"start"}); };
 
   // signature modal
