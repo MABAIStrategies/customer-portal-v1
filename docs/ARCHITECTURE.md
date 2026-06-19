@@ -48,12 +48,19 @@ Pipeline functions (all in the file's IIFE):
 - **Outputs:** `genGoogleDoc()` (review doc) → `buildReport()` (Apex preview) →
   `generate-apex-pdf` skill (branded PDF + in-app signature).
 
-### The single online dependency — Google Doc
-Creating a Google Doc from Apex's Drive template needs Apex's Google connection. Phase 1
-ships the **offline-safe default**: `genGoogleDoc()` builds a Google-Docs-importable `.doc`
-(red-flagged) and opens Google Docs for a one-click upload. The durable replacement is a thin
-**Apps Script / Google Docs API** bound to Apex's Drive that populates the template directly —
-drop-in, no UI change.
+### The single online dependency — Google Doc (wired)
+Creating a Google Doc from Apex's Drive template needs Apex's Google connection. This is wired
+via a **Google Apps Script Web App** bound to Apex's Drive (`integrations/google-doc/Code.gs`,
+setup in that folder's README). It owns/auto-provisions a North-Star template Doc with
+`{{PLACEHOLDERS}}`, fills them from the report data, paints `[TO VERIFY]` flags red, and
+returns the new Doc's URL.
+
+- The Studio app stores the deployed Web App URL in `localStorage` (set via the **⚙** button)
+  and POSTs the token map (`gdocTokens()`) as `text/plain` (avoids a CORS preflight Apps
+  Script can't answer), then opens the returned Doc URL.
+- **Graceful fallback:** if no endpoint is set or it's unreachable, `downloadDoc()` produces
+  the red-flagged importable `.doc` — so the workflow never blocks and stays offline-capable.
+- No keys are embedded in the HTML; the script runs as the Drive owner, free.
 
 ### The extraction swap point (future fine-tuned model)
 `extractSource()` is deliberately the only place that "understands" a report. Today it is

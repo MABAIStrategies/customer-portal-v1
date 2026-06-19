@@ -214,6 +214,7 @@
           <div class="btn-row">
             <button class="btn" id="verifyAllBtn">Mark all verified</button>
             <button class="btn brass" id="genDocBtn">📄 Generate Google Doc for review</button>
+            <button class="btn" id="gdocCfg" title="Configure the Google Doc endpoint" style="padding:11px 12px">⚙</button>
             <button class="btn" id="buildReportBtn">Build report preview ↓</button>
           </div>
         </div>
@@ -644,11 +645,49 @@ function googleDocHtml(){
 }
 function fileBase(){const a=(MODEL.property.v||"Property").replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-").slice(0,48);
   return `Apex_${a}_${new Date().toISOString().slice(0,10)}`;}
-function genGoogleDoc(){
+const GDOC_KEY="apex_gdoc_endpoint";
+function getEndpoint(){try{return localStorage.getItem(GDOC_KEY)||"";}catch(e){return "";}}
+function setEndpoint(u){try{u?localStorage.setItem(GDOC_KEY,u):localStorage.removeItem(GDOC_KEY);}catch(e){}}
+function configEndpoint(){
+  const v=prompt("Apex Google-Doc endpoint — paste your Apps Script Web App URL (ends in /exec).\nSee integrations/google-doc/README.md to deploy it (≈3 min).\nLeave blank to clear and use the offline .doc download instead.",getEndpoint());
+  if(v===null)return; setEndpoint(v.trim());
+  toast(v.trim()?"Endpoint saved.":"Cleared — will download an importable .doc.");
+}
+// builds the {{PLACEHOLDER}} -> value map the Apps Script fills; unverified values keep a red [TO VERIFY] flag
+function gdocTokens(){
+  const M=MODEL, sv=o=>o.v?(o.verified?o.v:o.v+" [TO VERIFY]"):"";
+  const list=arr=>arr.length?arr.map(it=>"• "+(it.verified?it.line:it.line+" [TO VERIFY]")).join("\n"):"NONE FOUND";
+  return {
+    SEARCH_DATE:sv(M.searchDate),INDEX_DATE:sv(M.indexDate),PROPERTY:sv(M.property),
+    CONDO_SUBDIVISION:sv(M.condoSubdivision),HUNDRED:sv(M.hundred),PARCEL_NUMBER:sv(M.parcelNumber),
+    UNIT_LOT:sv(M.unitLot),BLOCK:sv(M.block),SECTION:sv(M.section),
+    SELLERS_OWNERS:sv(M.sellersOwners),BUYERS_BORROWERS:sv(M.buyersBorrowers),DEED_RECORD:sv(M.deedRecord),
+    TAX_STATUS:sv(M.taxStatus),
+    LEGAL_DESCRIPTION:M.legalDescription.v?sv(M.legalDescription):"[TO BE VERIFIED — pull recorded instrument]",
+    CHAIN:list(M.chain),MORTGAGES:list(M.mortgages),ASSIGNMENTS:list(M.assignments),
+    SATISFACTIONS:list(M.satisfied),JUDGMENTS:list(M.judgments),FEDERAL_LIEN:list(M.federalLien),OTHER_LIENS:list(M.otherLiens),
+    DRAFT_BANNER:anyUnverified()?"DRAFT — NOT A COMPLETED SEARCH. Fields marked [TO VERIFY] were transcribed from source reports and not yet confirmed against recorded instruments.":""
+  };
+}
+function downloadDoc(){
   const blob=new Blob([googleDocHtml()],{type:"application/msword"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileBase()+"_REVIEW.doc";a.click();URL.revokeObjectURL(a.href);
-  toast("Review doc generated — open it in Google Docs (File ▸ Open ▸ Upload) for shared sign-off.");
-  try{window.open("https://docs.google.com/document/u/0/","_blank");}catch(e){}
+  toast("Importable .doc downloaded — open it in Google Docs (File ▸ Open ▸ Upload) for shared sign-off.");
+}
+async function genGoogleDoc(){
+  if(!MODEL)return;
+  if(!getEndpoint()){
+    if(confirm("No Google-Doc endpoint is connected yet.\n\nOK = connect it now (paste your Apps Script URL).\nCancel = just download an importable .doc.")) configEndpoint();
+    if(!getEndpoint()) return downloadDoc();
+  }
+  toast("Creating Google Doc from your template…");
+  try{
+    const res=await fetch(getEndpoint(),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({title:fileBase()+" — REVIEW",tokens:gdocTokens()})});
+    const data=await res.json();
+    if(data&&data.ok&&data.url){window.open(data.url,"_blank");toast("Google Doc created from your template — opening for review.");}
+    else throw new Error((data&&data.error)||"no url returned");
+  }catch(e){ toast("Couldn’t reach the endpoint — downloading an importable .doc instead."); downloadDoc(); }
 }
 
 /* =========================================================================
@@ -682,6 +721,7 @@ function init(){
     if(!confirm("Mark EVERY field verified? Only do this once you've confirmed them against the record."))return;
     SCALAR.forEach(([k])=>MODEL[k].verified=true); LISTS.forEach(([k])=>MODEL[k].forEach(it=>it.verified=true)); renderData(); };
   $("#genDocBtn").onclick=()=>{ if(!MODEL)return; genGoogleDoc(); };
+  $("#gdocCfg").onclick=configEndpoint;
   $("#buildReportBtn").onclick=()=>{ if(!MODEL)return; buildReport(); $("#reportTurn").scrollIntoView({behavior:"smooth",block:"start"}); };
 
   // signature modal
