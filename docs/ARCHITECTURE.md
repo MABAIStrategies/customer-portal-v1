@@ -81,8 +81,20 @@ model, the doc/PDF steps, and the tests stay unchanged.
 - `node test/extract_test.mjs` — 8/8, the Studio extractor on the 905 Shallcross example
   (table isolation, label reads, "none" dropping, junk-row protection, tax status).
 
+## Fully offline (PDF reading included)
+The deliverable is a single HTML file that works **with or without internet** — important for
+use in county offices / on the road. PDF.js is **vendored** (`vendor/pdfjs/`, Apache-2.0) and
+**inlined** into `Apex_Title_Studio.html` by `tools/build_studio.mjs`, including a
+same-document worker the app turns into a Blob URL. There are **no CDN or network calls** at
+runtime; the only optional online action is opening Google Docs for the review upload (the
+`.doc` itself is generated offline).
+
+Rebuild after editing the app: `node tools/build_studio.mjs` (idempotent).
+
 ## Files
-- `Apex_Title_Studio.html` — the Phase 1 app.
+- `Apex_Title_Studio.html` — the Phase 1 app (self-contained, PDF.js inlined).
+- `tools/build_studio.mjs` — inlines vendored PDF.js for offline PDF reading.
+- `vendor/pdfjs/` — Mozilla PDF.js v3.11.174 (Apache-2.0) + NOTICE.
 - `skills/generate-apex-pdf/SKILL.md` — the final PDF step.
 - `test/extract_test.mjs`, `test/parser_test.mjs` — extraction + parser harnesses.
 - Reuse: `Apex_Title_Form_Filler.html` (parser), `src/`, `db/`, `package.json` (Phase 2).
