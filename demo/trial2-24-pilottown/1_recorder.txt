@@ -1,0 +1,19 @@
+SUSSEX COUNTY RECORDER OF DEEDS — LANDMARKWEB SEARCH RESULTS
+PROPERTY ADDRESS: 24 Pilottown Road, Lewes, DE 19958
+PARCEL NUMBER: 335-8.00-112.00
+HUNDRED: Lewes & Rehoboth Hundred
+SUBDIVISION: Town of Lewes
+SELLERS/OWNERS: Marcus T. Ellison
+DEED RECORD: Instrument 2022-00041882
+LEGAL DESCRIPTION: ALL that certain lot, piece or parcel of land, with the improvements thereon erected, situate in the Town of Lewes, Lewes & Rehoboth Hundred, Sussex County, State of Delaware, lying on the Northeasterly side of Pilottown Road, and being more particularly bounded and described as follows, to wit: BEGINNING at a point on the Northeasterly side of Pilottown Road, a corner for this lot and lands now or formerly of Burton; thence running North 42 degrees East 180.00 feet, more or less, to a point; thence South 48 degrees East 75.00 feet to a point; thence South 42 degrees West 180.00 feet to the Northeasterly side of Pilottown Road; thence along the same North 48 degrees West 75.00 feet to the point and place of BEGINNING.
+Grantor,Grantee,Record Date,Doc Type,Book,Page,Instrument,Amount
+"COASTAL DEVELOPMENT CORP","ELLISON, HAROLD W & MARY B",05/04/1981,Warranty Deed,742,118,,"$46,000"
+"ESTATE OF MARY B. ELLISON","ELLISON, MARCUS T",03/12/2001,Executor's Deed,2210,55,,
+"ELLISON, MARCUS T","REHOBOTH BAY TRUST",07/19/2013,Quitclaim Deed,3980,201,2013-00031145,
+"REHOBOTH BAY TRUST","WSFS BANK",07/22/2013,MTG,3981,15,2013-00031146,"$210,000"
+"WSFS BANK","REHOBOTH BAY TRUST",06/30/2022,Satisfaction,,,2022-00041880,
+"REHOBOTH BAY TRUST","ELLISON, MARCUS T",06/30/2022,Warranty Deed,,,2022-00041882,"$525,000"
+"ELLISON, MARCUS T","ROCKET MORTGAGE LLC",06/30/2022,MTG,,,2022-00041883,"$400,000"
+"ROCKET MORTGAGE LLC","LAKEVIEW LOAN SERVICING LLC",02/14/2023,ASGN,,,2023-00012077,
+"COASTAL BUILDERS LLC","ELLISON, MARCUS T",09/05/2023,Mechanics Lien,,,2023-00061190,"$18,400"
+"DISCOVER BANK","ELLISON, MARCUS T",01/22/2024,Lis Pendens,,,2024-00004551,

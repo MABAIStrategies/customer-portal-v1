@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Abstracts × MAB AI Strategies — Demo Explainer</title>
+<style>
+  :root{
+    /* MAB AI Strategies — Modern Stoic Luxury */
+    --charcoal:#141619;        /* matte charcoal */
+    --tungsten:#1f2329;        /* tungsten gray */
+    --tungsten-2:#272c34;
+    --line:#343b45;
+    --ink:#eef2f6;             /* off-white text */
+    --ink-soft:#aab3c0;
+    --ink-faint:#6b7686;
+    --blue:#00e5ff;            /* electric blue accent */
+    --blue-dim:#0bb6cc;
+    --brass:#b9a06a;           /* Apex brass hairline */
+    --clear:#3ddc97;--clouded:#e0a93b;--resolve:#ff6b6b;
+    --sans:-apple-system,"Segoe UI","Inter",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Times New Roman",Times,Georgia,serif;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    font-family:var(--sans);color:var(--ink);
+    background:radial-gradient(1200px 800px at 70% -10%,#1c2128 0%,var(--charcoal) 55%) fixed;
+    overflow:hidden;-webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* ---------- deck chrome ---------- */
+  .deck{position:fixed;inset:0;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 34px;border-bottom:1px solid var(--line);
+    background:linear-gradient(to bottom,rgba(20,22,25,.9),rgba(20,22,25,.4));
+  }
+  .brand{display:flex;align-items:center;gap:14px;min-width:0}
+  .mark{
+    width:40px;height:40px;border-radius:9px;flex:none;display:grid;place-items:center;
+    background:var(--tungsten);border:1px solid var(--line);position:relative;
+    font-family:var(--serif);font-weight:700;font-size:17px;letter-spacing:.5px;color:var(--blue);
+  }
+  .mark::after{content:"";position:absolute;left:8px;right:8px;bottom:6px;height:2px;background:var(--blue);border-radius:2px;box-shadow:0 0 12px var(--blue)}
+  .brand-txt{line-height:1.1;min-width:0}
+  .brand-txt .a{font-size:15px;font-weight:700;letter-spacing:.3px}
+  .brand-txt .b{font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+  .topbar .x{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint)}
+  .topbar .x b{color:var(--brass);font-weight:600}
+
+  /* ---------- stage ---------- */
+  .stage{flex:1;position:relative;overflow:hidden}
+  .slide{
+    position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+    padding:clamp(28px,5vw,80px) clamp(28px,7vw,120px);
+    opacity:0;transform:translateY(14px);transition:opacity .38s ease,transform .38s ease;
+  }
+  .slide.live{display:flex}
+  .slide.in{opacity:1;transform:none}
+  .kicker{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:14px}
+  h1{font-size:clamp(34px,6.5vw,76px);line-height:1.03;margin:0 0 18px;font-weight:800;letter-spacing:-.5px}
+  h2{font-size:clamp(26px,4vw,46px);line-height:1.08;margin:0 0 22px;font-weight:800;letter-spacing:-.4px}
+  h1 .accent,h2 .accent{color:var(--blue)}
+  .lead{font-size:clamp(16px,1.9vw,22px);color:var(--ink-soft);max-width:60ch;line-height:1.5}
+  .hair{height:1px;background:linear-gradient(to right,var(--brass),transparent);width:160px;margin:22px 0}
+
+  ul.bul{list-style:none;padding:0;margin:6px 0 0;max-width:64ch}
+  ul.bul li{position:relative;padding:11px 0 11px 30px;font-size:clamp(15px,1.7vw,20px);color:var(--ink);border-bottom:1px solid rgba(52,59,69,.5)}
+  ul.bul li:last-child{border-bottom:0}
+  ul.bul li::before{content:"";position:absolute;left:2px;top:18px;width:9px;height:9px;border-radius:2px;background:var(--blue);box-shadow:0 0 10px rgba(0,229,255,.6)}
+  ul.bul li b{color:#fff}
+  ul.bul li small{display:block;color:var(--ink-faint);font-size:.8em;margin-top:3px;letter-spacing:.2px}
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:10px}
+  .card{background:var(--tungsten);border:1px solid var(--line);border-radius:12px;padding:20px 18px}
+  .card .ic{font-size:24px;margin-bottom:10px}
+  .card h3{margin:0 0 6px;font-size:16px;font-weight:700}
+  .card p{margin:0;font-size:13px;color:var(--ink-soft);line-height:1.45}
+  @media (max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+
+  .flow{display:flex;align-items:stretch;gap:14px;margin-top:18px;flex-wrap:wrap}
+  .flow .node{flex:1;min-width:150px;background:var(--tungsten);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .flow .node.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),0 0 28px rgba(0,229,255,.15)}
+  .flow .node .t{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+  .flow .node .t.b{color:var(--blue)}
+  .flow .node p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.45}
+  .flow .arr{align-self:center;color:var(--brass);font-size:22px}
+  @media (max-width:900px){.flow .arr{display:none}}
+
+  table.tbl{border-collapse:collapse;width:100%;margin-top:10px;font-size:14px}
+  table.tbl th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--line);color:var(--ink-faint);font-size:11px;letter-spacing:1.2px;text-transform:uppercase}
+  table.tbl td{padding:10px 12px;border-bottom:1px solid rgba(52,59,69,.5);color:var(--ink-soft)}
+  table.tbl td b{color:#fff}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.4px}
+  .tag.clear{color:var(--clear);background:rgba(61,220,151,.12);border:1px solid rgba(61,220,151,.4)}
+  .tag.clouded{color:var(--clouded);background:rgba(224,169,59,.12);border:1px solid rgba(224,169,59,.4)}
+  .tag.resolve{color:var(--resolve);background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.4)}
+
+  /* links / buttons */
+  .btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  a.btn{
+    display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-weight:600;font-size:14px;
+    padding:12px 18px;border-radius:9px;border:1px solid var(--line);color:var(--ink);background:var(--tungsten-2);
+    transition:border-color .15s,background .15s,transform .1s;
+  }
+  a.btn:hover{border-color:var(--blue);background:#2b323b;transform:translateY(-1px)}
+  a.btn.primary{background:var(--blue);color:#06222a;border-color:var(--blue);box-shadow:0 0 24px rgba(0,229,255,.25)}
+  a.btn.primary:hover{background:#5cefff;color:#06222a}
+  a.btn .k{font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  a.btn.primary .k{color:#0a3540}
+
+  .linkgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:14px}
+  @media (max-width:900px){.linkgrid{grid-template-columns:1fr}}
+  .linkcol{background:var(--tungsten);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .linkcol h4{margin:0 0 4px;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--blue)}
+  .linkcol .sub{font-size:11px;color:var(--ink-faint);margin-bottom:12px}
+  .linkcol a{display:block;color:var(--ink);text-decoration:none;font-size:13.5px;padding:8px 0;border-bottom:1px solid rgba(52,59,69,.5);word-break:break-all}
+  .linkcol a:last-child{border-bottom:0}
+  .linkcol a:hover{color:var(--blue)}
+  .linkcol a .u{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:2px}
+  .note{margin-top:14px;font-size:12.5px;color:var(--ink-faint);max-width:80ch;line-height:1.5}
+  code{font-family:var(--mono);background:#10131a;border:1px solid var(--line);border-radius:5px;padding:2px 7px;color:var(--brass);font-size:.92em}
+
+  .big-stat{display:flex;gap:40px;flex-wrap:wrap;margin-top:20px}
+  .big-stat .s{min-width:140px}
+  .big-stat .s .n{font-size:clamp(34px,5vw,58px);font-weight:800;color:var(--blue);line-height:1}
+  .big-stat .s .l{font-size:13px;color:var(--ink-soft);margin-top:8px;letter-spacing:.3px}
+
+  .quote{font-family:var(--serif);font-size:clamp(20px,3vw,32px);line-height:1.35;color:var(--ink);max-width:30ch}
+
+  /* ---------- footer / nav ---------- */
+  .footer{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:12px 34px;border-top:1px solid var(--line);background:rgba(20,22,25,.6);
+  }
+  .dots{display:flex;gap:8px;flex-wrap:wrap}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line);border:0;padding:0;cursor:pointer;transition:background .15s,transform .15s}
+  .dot:hover{background:var(--ink-faint)}
+  .dot.on{background:var(--blue);box-shadow:0 0 10px rgba(0,229,255,.7);transform:scale(1.15)}
+  .nav{display:flex;align-items:center;gap:10px}
+  .nav button{
+    background:var(--tungsten-2);border:1px solid var(--line);color:var(--ink);border-radius:8px;
+    width:38px;height:34px;cursor:pointer;font-size:16px;transition:border-color .15s,background .15s}
+  .nav button:hover{border-color:var(--blue);background:#2b323b}
+  .nav .count{font-family:var(--mono);font-size:12px;color:var(--ink-faint);min-width:54px;text-align:center}
+  .hint{font-size:11px;color:var(--ink-faint);letter-spacing:.5px}
+  @media (max-width:700px){.hint{display:none}.topbar .x{display:none}}
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">M</div>
+      <div class="brand-txt">
+        <div class="a">MAB AI Strategies</div>
+        <div class="b">Workflow Automation</div>
+      </div>
+    </div>
+    <div class="x">Client&nbsp;Engagement&nbsp;·&nbsp;<b>Apex Abstracts</b></div>
+  </div>
+
+  <div class="stage" id="stage">
+
+    <!-- 1 — COVER -->
+    <section class="slide">
+      <div class="kicker">MAB AI Strategies × Apex Abstracts</div>
+      <h1>Your title reports,<br><span class="accent">filled automatically.</span></h1>
+      <div class="hair"></div>
+      <p class="lead">An offline tool that turns your recorder index results into a finished, client-ready Delaware Title Search Report — in minutes, on your own machine, with you in control the whole way.</p>
+      <div class="btns">
+        <a class="btn primary" href="./Apex_Title_Form_Filler.html" target="_blank" rel="noopener">▶ Open the live tool <span class="k">local</span></a>
+        <a class="btn" href="#" onclick="go(3);return false;">See it work →</a>
+      </div>
+    </section>
+
+    <!-- 2 — THE PROBLEM -->
+    <section class="slide">
+      <div class="kicker">The bottleneck today</div>
+      <h2>Title abstracting is expert work <span class="accent">buried in re-typing.</span></h2>
+      <ul class="bul">
+        <li><b>The same data, keyed twice.</b> Recorder results get hand-copied into the report, section by section.<small>Slow, and every transcription is a chance for an error to reach the client.</small></li>
+        <li><b>Chains assembled by hand.</b> Sorting deeds, mortgages, satisfactions and liens into order eats the morning.</li>
+        <li><b>Leads go cold.</b> A new order that isn't answered fast often walks to another abstractor within hours.</li>
+        <li><b>The back half is manual too.</b> Review, deliver, log, follow up — all by hand, on every file.</li>
+      </ul>
+    </section>
+
+    <!-- 3 — WHAT WE BUILT -->
+    <section class="slide">
+      <div class="kicker">What we built for Apex</div>
+      <h2>One file. <span class="accent">Zero installs.</span> Your exact report.</h2>
+      <div class="cards">
+        <div class="card"><div class="ic">⚡</div><h3>Auto-fills the report</h3><p>Paste your recorder index — it sorts every document into chain of title, mortgages, satisfactions, assignments and the right lien category.</p></div>
+        <div class="card"><div class="ic">📄</div><h3>Your exact format</h3><p>Outputs the Delaware Title Search Report template you already use — same sections, ready as a PDF.</p></div>
+        <div class="card"><div class="ic">✓</div><h3>You stay in control</h3><p>Every parsed record is shown for review first. Fix anything, exclude anything — nothing commits until you say so.</p></div>
+        <div class="card"><div class="ic">🔒</div><h3>Nothing leaves your PC</h3><p>Runs entirely in your browser. No accounts, no cloud, no data sent anywhere.</p></div>
+      </div>
+    </section>
+
+    <!-- 4 — HOW IT WORKS / LIVE DEMO -->
+    <section class="slide">
+      <div class="kicker">Live demo · four steps</div>
+      <h2>Import → Review → Verify → <span class="accent">Deliver.</span></h2>
+      <div class="flow">
+        <div class="node hot"><div class="t b">01 · Import</div><p>Paste the grantor/grantee results or upload a CSV/TSV, then <b>Parse</b>.</p></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">02 · Review</div><p>See where each document routes. Re-route or uncheck other-property rows.</p></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">03 · Verify</div><p>Add the judgment calls — tax status, legal, title opinion.</p></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t">04 · Deliver</div><p>Print / Save PDF — auto-named to your standard.</p></div>
+      </div>
+      <div class="btns">
+        <a class="btn primary" href="./Apex_Title_Form_Filler.html" target="_blank" rel="noopener">▶ Open the tool <span class="k">local</span></a>
+        <a class="btn" href="./demo/dataset1_newcastle_clear.tsv" target="_blank" rel="noopener">Demo data: New Castle (Clear)</a>
+        <span class="hint" style="align-self:center">Tip: click <b>Load demo records</b> inside the tool for an instant run.</span>
+      </div>
+    </section>
+
+    <!-- 5 — THE FIVE SCENARIOS -->
+    <section class="slide">
+      <div class="kicker">Proven across real conditions</div>
+      <h2>Five demo files, <span class="accent">three counties.</span></h2>
+      <table class="tbl">
+        <thead><tr><th>Scenario</th><th>County</th><th>Outcome</th><th>Open</th></tr></thead>
+        <tbody>
+          <tr><td><b>Clean single-family</b></td><td>New Castle</td><td><span class="tag clear">Clear</span></td><td><a href="./demo/dataset1_newcastle_clear.tsv" target="_blank" rel="noopener" style="color:var(--blue)">dataset 1 ↗</a></td></tr>
+          <tr><td><b>Mortgage + judgment + delinquent tax</b></td><td>Kent</td><td><span class="tag clouded">Clouded</span></td><td><a href="./demo/dataset2_kent_clouded.tsv" target="_blank" rel="noopener" style="color:var(--blue)">dataset 2 ↗</a></td></tr>
+          <tr><td><b>Chain gap + federal lien + lis pendens</b></td><td>Sussex</td><td><span class="tag resolve">Requires Resolution</span></td><td><a href="./demo/dataset3_sussex_resolution.tsv" target="_blank" rel="noopener" style="color:var(--blue)">dataset 3 ↗</a></td></tr>
+          <tr><td><b>Commercial LLC, assignments + payoff</b></td><td>New Castle</td><td><span class="tag clouded">Judgment step</span></td><td><a href="./demo/dataset4_newcastle_commercial.tsv" target="_blank" rel="noopener" style="color:var(--blue)">dataset 4 ↗</a></td></tr>
+          <tr><td><b>Messy real-world paste (exclude/route)</b></td><td>mixed</td><td><span class="tag clear">Review demo</span></td><td><a href="./demo/dataset5_messy_realworld.csv" target="_blank" rel="noopener" style="color:var(--blue)">dataset 5 ↗</a></td></tr>
+        </tbody>
+      </table>
+      <div class="note">Full guide with expected results: <a href="./demo/Apex_Demo_Datasets.md" target="_blank" rel="noopener" style="color:var(--blue)">demo/Apex_Demo_Datasets.md</a></div>
+    </section>
+
+    <!-- 6 — ACCURACY & TRUST -->
+    <section class="slide">
+      <div class="kicker">Accuracy &amp; trust</div>
+      <h2>The machine does the lifting. <span class="accent">You make the calls.</span></h2>
+      <div class="big-stat">
+        <div class="s"><div class="n">22/22</div><div class="l">automated checks pass<br>against the shipped tool</div></div>
+        <div class="s"><div class="n">100%</div><div class="l">offline — no data<br>leaves the machine</div></div>
+        <div class="s"><div class="n">1</div><div class="l">honest caveat: paid-off<br>mortgages are flagged for<br>your manual move</div></div>
+      </div>
+      <ul class="bul" style="margin-top:22px">
+        <li><b>Every record is shown before it commits</b> — re-route, exclude, edit. The tool never hides a decision from you.<small>It lists satisfactions and their mortgages separately and asks you to confirm the payoff — that's the one place your judgment is required, by design.</small></li>
+        <li><b>Tax status, legal description and title opinion stay yours</b> — the tool won't guess what only an abstractor should decide.</li>
+      </ul>
+    </section>
+
+    <!-- 7 — ONE-CLICK DELIVERY -->
+    <section class="slide">
+      <div class="kicker">How you receive it</div>
+      <h2>One page. <span class="accent">One click.</span> It's yours forever.</h2>
+      <p class="lead">A branded setup page hands you the tool as a single download — verified byte-for-byte identical to the working file. Save it to your Desktop and it runs offline, forever, no account.</p>
+      <div class="btns">
+        <a class="btn primary" href="./Apex_Setup_and_Download.html" target="_blank" rel="noopener">▶ Open the setup &amp; download page <span class="k">local</span></a>
+      </div>
+      <div class="note">Recommended next step for delivery: host this setup page over HTTPS so it's one bookmarked link for Zach, with a visible version stamp and an "update" check.</div>
+    </section>
+
+    <!-- 8 — ROADMAP -->
+    <section class="slide">
+      <div class="kicker">Where this goes next</div>
+      <h2>Take work off Zach <span class="accent">on both sides</span> of the tool.</h2>
+      <div class="flow">
+        <div class="node"><div class="t b">Before</div><p><b>Instant lead reply</b> in your voice (under 2 hours), so leads don't walk. Plus a daily research digest flagging buyers at 80%+ confidence.</p></div>
+        <div class="arr">→</div>
+        <div class="node hot"><div class="t b">The tool</div><p>Parses &amp; fills the report — what you saw today.</p></div>
+        <div class="arr">→</div>
+        <div class="node"><div class="t b">After</div><p><b>Review &amp; sign → branded delivery</b> → logged in GoHighLevel → automatic 1/3/7-day follow-ups.</p></div>
+      </div>
+      <ul class="bul" style="margin-top:18px">
+        <li><b>Co-pilot input assist</b> — opens the right county portal pre-filled and pulls your exported results straight into the tool. Respects each portal's terms; no scraping behind logins.</li>
+        <li><b>Built natively in GoHighLevel</b> — your CRM stays the single source of truth.</li>
+      </ul>
+      <div class="note">Full plan: <a href="./docs/ROADMAP.md" target="_blank" rel="noopener" style="color:var(--blue)">docs/ROADMAP.md</a> · Test results: <a href="./docs/TEST_REPORT.md" target="_blank" rel="noopener" style="color:var(--blue)">docs/TEST_REPORT.md</a></div>
+    </section>
+
+    <!-- 9 — SAFE / COMPLIANCE -->
+    <section class="slide">
+      <div class="kicker">Built to be safe</div>
+      <h2>Private by default. <span class="accent">Compliant by design.</span></h2>
+      <ul class="bul">
+        <li><b>Client PII never leaves the machine.</b> No backend, no login, no transmission — nothing to breach.</li>
+        <li><b>Records access stays within terms.</b> The co-pilot opens public portals and parses your own exports; it does not bypass logins, CAPTCHAs, or subscription walls.</li>
+        <li><b>Clear scope of work.</b> Output is labeled a title <b>abstract</b>, not a title opinion or insurance — protecting Apex.</li>
+        <li><b>You review and sign every report</b> before a client ever sees it.</li>
+      </ul>
+    </section>
+
+    <!-- 10 — LINKS & NEXT STEPS -->
+    <section class="slide">
+      <div class="kicker">Links &amp; next steps</div>
+      <h2>Everything, <span class="accent">in one place.</span></h2>
+      <div class="linkgrid">
+        <div class="linkcol">
+          <h4>Live (GitHub)</h4>
+          <div class="sub">The source of record</div>
+          <a href="https://github.com/MABAIStrategies/apex-abstracts-v2" target="_blank" rel="noopener">Repository<span class="u">github.com/MABAIStrategies/apex-abstracts-v2</span></a>
+          <a href="https://github.com/MABAIStrategies/apex-abstracts-v2/pull/1" target="_blank" rel="noopener">Pull request #1 — this delivery<span class="u">/pull/1</span></a>
+        </div>
+        <div class="linkcol">
+          <h4>Local file</h4>
+          <div class="sub">Used live in this demo</div>
+          <a href="./Apex_Title_Form_Filler.html" target="_blank" rel="noopener">The Form Filler tool<span class="u">./Apex_Title_Form_Filler.html</span></a>
+          <a href="./Apex_Setup_and_Download.html" target="_blank" rel="noopener">Setup &amp; download page<span class="u">./Apex_Setup_and_Download.html</span></a>
+          <a href="./demo/Apex_Demo_Datasets.md" target="_blank" rel="noopener">5 demo datasets + guide<span class="u">./demo/</span></a>
+        </div>
+        <div class="linkcol">
+          <h4>Localhost</h4>
+          <div class="sub">Optional — if you serve the folder</div>
+          <a href="http://localhost:8000/Apex_Setup_and_Download.html" target="_blank" rel="noopener">Setup page<span class="u">localhost:8000/Apex_Setup_and_Download.html</span></a>
+          <a href="http://localhost:8000/Apex_Title_Form_Filler.html" target="_blank" rel="noopener">Form Filler<span class="u">localhost:8000/Apex_Title_Form_Filler.html</span></a>
+        </div>
+      </div>
+      <div class="note">To serve locally, run <code>python3 -m http.server 8000</code> from the repo folder, then use the Localhost links. The Local-file links work by just double-clicking this presentation next to the two HTML files — no server needed.</div>
+      <div class="btns"><a class="btn primary" href="./Apex_Title_Form_Filler.html" target="_blank" rel="noopener">▶ Start the demo</a></div>
+    </section>
+
+  </div>
+
+  <div class="footer">
+    <div class="dots" id="dots"></div>
+    <div class="nav">
+      <button id="prev" aria-label="Previous slide">‹</button>
+      <span class="count"><span id="cur">1</span> / <span id="total">10</span></span>
+      <button id="next" aria-label="Next slide">›</button>
+      <span class="hint">← → / Space · F fullscreen</span>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+  const slides=[...document.querySelectorAll(".slide")];
+  const dotsWrap=document.getElementById("dots");
+  let i=0;
+  document.getElementById("total").textContent=slides.length;
+  slides.forEach((_,n)=>{const b=document.createElement("button");b.className="dot";b.setAttribute("aria-label","Slide "+(n+1));b.onclick=()=>go(n);dotsWrap.appendChild(b);});
+  const dots=[...dotsWrap.children];
+
+  function render(){
+    slides.forEach((s,n)=>{
+      s.classList.toggle("live",n===i);
+      if(n===i){requestAnimationFrame(()=>s.classList.add("in"));}else{s.classList.remove("in");}
+    });
+    dots.forEach((d,n)=>d.classList.toggle("on",n===i));
+    document.getElementById("cur").textContent=i+1;
+    if(location.hash!=="#"+(i+1)) history.replaceState(null,"","#"+(i+1));
+  }
+  window.go=function(n){i=Math.max(0,Math.min(slides.length-1,n));render();};
+  const next=()=>go(i+1), prev=()=>go(i-1);
+
+  document.getElementById("next").onclick=next;
+  document.getElementById("prev").onclick=prev;
+  document.addEventListener("keydown",e=>{
+    if(e.key==="ArrowRight"||e.key===" "||e.key==="PageDown"){e.preventDefault();next();}
+    else if(e.key==="ArrowLeft"||e.key==="PageUp"){e.preventDefault();prev();}
+    else if(e.key==="Home"){go(0);} else if(e.key==="End"){go(slides.length-1);}
+    else if(e.key==="f"||e.key==="F"){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();}
+  });
+  // swipe on touch
+  let sx=null;
+  document.addEventListener("touchstart",e=>sx=e.touches[0].clientX,{passive:true});
+  document.addEventListener("touchend",e=>{if(sx==null)return;const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50){dx<0?next():prev();}sx=null;},{passive:true});
+
+  const start=parseInt((location.hash||"").replace("#",""),10);
+  if(start>=1&&start<=slides.length)i=start-1;
+  render();
+})();
+</script>
+</body>
+</html>

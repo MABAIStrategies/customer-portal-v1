@@ -1,0 +1,27 @@
+NEW CASTLE COUNTY RECORDER OF DEEDS — GRANTOR/GRANTEE INDEX RESULTS
+PROPERTY: 1403 Stoneleigh Road, Wilmington, Delaware 19803
+PARCEL NUMBER: 06-114.00-027
+HUNDRED: Brandywine Hundred
+CONDOMINIUM/SUBDIVISION: Stoneleigh, Section C
+UNIT/LOT NUMBER: 27
+BLOCK: 114
+SELLERS/OWNERS: Daniel R. Harper and Sarah L. Harper
+DEED RECORD: Instrument 20160712-0048217
+LEGAL DESCRIPTION: ALL that certain lot, piece or parcel of land, with the buildings thereon erected, situate in Brandywine Hundred, New Castle County and State of Delaware, being known as Lot 27, Block 114, on the plan of "Stoneleigh, Section C," recorded in the Office of the Recorder of Deeds in and for New Castle County in Plat Book 12, Page 84, and being more particularly bounded and described as follows, to wit: BEGINNING at a point on the Northwesterly side of Stoneleigh Road (50 feet wide) at a corner for Lot 26; thence along said Lot 26 North 38 degrees 15 minutes West 150.00 feet to a corner; thence North 51 degrees 45 minutes East 80.00 feet to a corner for Lot 28; thence along said Lot 28 South 38 degrees 15 minutes East 150.00 feet to the Northwesterly side of Stoneleigh Road; thence along the same South 51 degrees 45 minutes West 80.00 feet to the point and place of BEGINNING. BE the contents thereof what they may.
+Grantor	Grantee	Record Date	Doc Type	Book	Page	Instrument	Amount
+STONELEIGH BUILDERS INC	WHITMORE, GEORGE A & EVELYN M	04/18/1983	Warranty Deed	1188	302		$78,500
+WHITMORE, GEORGE A	FIRST FEDERAL S&L OF DELAWARE	04/18/1983	Mortgage	1190	44		$62,800
+FIRST FEDERAL S&L OF DELAWARE	WHITMORE, GEORGE A	09/02/1994	Satisfaction of Mortgage	1611	210		
+WHITMORE, GEORGE A & EVELYN M	CALDWELL, ROBERT J & MARGARET A	08/27/1994	Warranty Deed	1609	118		$141,000
+CALDWELL, ROBERT J	WILMINGTON SAVINGS FUND SOCIETY	08/27/1994	Mortgage	1612	77		$112,800
+WILMINGTON SAVINGS FUND SOCIETY	CALDWELL, ROBERT J	06/15/2004	Satisfaction of Mortgage	20040615	99012	20040615-0061233	
+CALDWELL, ROBERT J & MARGARET A	NGUYEN, PHILLIP T & LISA M	06/11/2004	Warranty Deed	20040611	88410	20040611-0059884	$268,000
+NGUYEN, PHILLIP T	COUNTRYWIDE HOME LOANS INC	06/11/2004	Mortgage	20040611	88455	20040611-0059885	$241,200
+COUNTRYWIDE HOME LOANS INC	BANK OF AMERICA NA	11/30/2009	Assignment of Mortgage			20091130-0085512	
+BANK OF AMERICA NA	NGUYEN, PHILLIP T	07/05/2016	Satisfaction of Mortgage			20160705-0047001	
+NGUYEN, PHILLIP T & LISA M	HARPER, DANIEL R & SARAH L	07/12/2016	Warranty Deed			20160712-0048217	$415,000
+HARPER, DANIEL R & SARAH L	WSFS BANK	07/12/2016	Mortgage			20160712-0048218	$332,000
+WSFS BANK	HARPER, DANIEL R	03/19/2021	Satisfaction of Mortgage			20210319-0021884	
+HARPER, DANIEL R & SARAH L	ROCKET MORTGAGE LLC	03/15/2021	Mortgage			20210315-0020551	$300,000
+ROCKET MORTGAGE LLC	LAKEVIEW LOAN SERVICING LLC	05/02/2022	Assignment of Mortgage			20220502-0033140	
+DELMARVA POWER & LIGHT CO	HARPER, DANIEL R & SARAH L	07/12/2016	Easement			20160712-0048219	
