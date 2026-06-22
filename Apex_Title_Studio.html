@@ -454,7 +454,8 @@ function composeNorthStar(){
     ex.records.forEach(r=>{
       const line = r.narrative || `${r.grantor||"?"} → ${r.grantee||"?"} — ${docFull(r.docType)||"Deed"}${r.recDate?", "+r.recDate:""}${(r.book||r.page)?`, Bk ${r.book||"—"}/Pg ${r.page||"—"}`:""}${r.instrument?` (Instr ${r.instrument})`:""}`;
       const key=r.route+"|"+line; if(seen[key])return; seen[key]=1;
-      const item={line,verified:false,source:tag,recDate:r.recDate||""};
+      const item={line,verified:false,source:tag,recDate:r.recDate||"",
+        grantor:r.grantor||"",grantee:r.grantee||"",book:r.book||"",page:r.page||"",instrument:r.instrument||"",docType:r.docType||"",narrative:!!r.narrative};
       if(r.route==="chain")model.chain.push(item);
       else if(r.route==="mortCurrent")model.mortgages.push(item);
       else if(r.route==="mortAssign")model.assignments.push(item);
@@ -465,7 +466,60 @@ function composeNorthStar(){
     });
   });
   model.chain.sort((a,b)=>sortKey(b.recDate)-sortKey(a.recDate));
+  reconcile(model);
+  analyzeChain(model);
   return model;
+}
+
+// ---- name-matching helpers (token overlap, ignoring entity boilerplate) ----
+function normName(s){
+  const GENERIC=new Set(["BANK","FSB","SSB","LLC","INC","CORP","COMPANY","HOLDINGS","GROUP","PARTNERS","ASSOC","ASSOCIATES","THE","AND","TRUST","FUND","SOCIETY","SAVINGS","MORTGAGE","HOME","LOANS","LOAN","SERVICING","FINANCIAL","ESTATE","DECEASED","ETUX","ETAL"]);
+  return String(s||"").toUpperCase().replace(/[^A-Z0-9 ]/g," ").split(/\s+/).filter(t=>t.length>=4&&!GENERIC.has(t));
+}
+function shareTok(a,b){const A=new Set(normName(a));return normName(b).some(t=>A.has(t));}
+// can mortgage-lender reach satisfaction-lender directly or by following assignment hops?
+function lenderReaches(model,fromLender,toLender){
+  if(shareTok(fromLender,toLender))return true;
+  const asg=model.assignments.filter(a=>!a.narrative&&a.grantor&&a.grantee);
+  let frontier=[fromLender];
+  for(let hop=0;hop<3&&frontier.length;hop++){
+    const next=[];
+    for(const f of frontier)for(const a of asg)if(shareTok(f,a.grantor)){if(shareTok(a.grantee,toLender))return true;next.push(a.grantee);}
+    frontier=next;
+  }
+  return false;
+}
+// FEATURE A — annotate each mortgage OPEN/RELEASED by matching satisfactions (never hides)
+function reconcile(model){
+  model.mortgages.forEach(m=>{if(!m.narrative)m.status="Open";});
+  model.satisfied.filter(s=>!s.narrative).forEach(s=>{
+    let best=null;
+    model.mortgages.forEach(m=>{
+      if(m.narrative||m.matched)return;
+      if(!shareTok(m.grantor,s.grantee))return;             // borrower (mortgagor) must match
+      if(!lenderReaches(model,m.grantee,s.grantor))return;  // lender (via assignments) must match
+      if(m.recDate&&s.recDate&&sortKey(m.recDate)>sortKey(s.recDate))return; // mortgage must predate release
+      if(!best||sortKey(m.recDate)>sortKey(best.recDate))best=m;
+    });
+    if(best){best.matched=true;best.status="Released";best.releasedBy={date:s.recDate,instr:s.instrument};s.matched=true;}
+    else s.flag="unmatched";
+  });
+}
+// FEATURE B — flag disconnected deeds (other property) and broken links (gaps); never removes
+function analyzeChain(model){
+  model.chainNotes=[];
+  const deeds=model.chain.filter(d=>!d.narrative&&(d.grantor||d.grantee));
+  deeds.forEach(d=>{
+    const back=deeds.some(o=>o!==d&&shareTok(d.grantor,o.grantee));
+    const fwd =deeds.some(o=>o!==d&&shareTok(d.grantee,o.grantor));
+    if(!back&&!fwd&&deeds.length>1)d.flag="otherProperty";
+  });
+  const conn=deeds.filter(d=>d.flag!=="otherProperty");
+  for(let i=0;i<conn.length-1;i++){
+    const nw=conn[i],od=conn[i+1];
+    if(nw.grantor&&od.grantee&&!shareTok(nw.grantor,od.grantee))
+      model.chainNotes.push(`Possible gap/break: ${od.grantee} (${od.recDate||"n/d"}) → ${nw.grantor} (${nw.recDate||"n/d"}) do not connect — verify intervening conveyance.`);
+  }
 }
 
 /* =========================================================================
@@ -572,13 +626,26 @@ function fieldRow(key,label,obj){
           ${obj.source?`<span class="src-tag">source: ${esc(obj.source)}</span>`:`<span class="src-tag">no source — enter manually</span>`}</div>
       </div></div>`;
 }
+// OPEN/RELEASED + chain/satisfaction flags surfaced from reconcile()/analyzeChain()
+function itemStatus(it){
+  if(it.status==="Released")return{txt:"RELEASED"+(it.releasedBy&&it.releasedBy.date?" "+it.releasedBy.date:""),warn:false};
+  if(it.status==="Open")return{txt:"OPEN",warn:true};
+  if(it.flag==="unmatched")return{txt:"⚠ NO MATCHING MORTGAGE — VERIFY",warn:true};
+  if(it.flag==="otherProperty")return{txt:"⚠ POSSIBLE OTHER PROPERTY — VERIFY",warn:true};
+  return null;
+}
+function statusChip(it){
+  const st=itemStatus(it); if(!st)return"";
+  const c=st.warn?"#b26a00":"#2e7d32";
+  return `<span style="font-size:10px;font-weight:700;letter-spacing:.4px;color:${c};border:1px solid ${c}44;background:${c}14;border-radius:4px;padding:1px 6px;margin-left:6px">${esc(st.txt)}</span>`;
+}
 function listBlock(key,label,arr){
   const rows=arr.length?arr.map((it,i)=>`
     <div class="field ${it.verified?"verified":"unverified"}" data-list="${key}" data-i="${i}">
       <label>${i===0?esc(label):""}</label>
       <div class="ctl"><input data-list="${key}" data-i="${i}" value="${esc(it.line)}">
         <div class="vrow"><span class="vflag" data-list="${key}" data-i="${i}"><span class="dot"></span>${it.verified?"VERIFIED":"TO VERIFY"}</span>
-          <span class="src-tag">source: ${esc(it.source||"")}</span></div></div></div>`).join("")
+          ${statusChip(it)}<span class="src-tag">source: ${esc(it.source||"")}</span></div></div></div>`).join("")
     : `<div class="field" data-empty="${key}"><label>${esc(label)}</label><div class="ctl"><input data-empty="${key}" placeholder="NONE FOUND — add an entry"></div></div>`;
   return rows;
 }
@@ -605,10 +672,16 @@ function anyUnverified(){
   return s||l;
 }
 function row(k,v,uv){return `<div class="r"><span class="k">${esc(k)}</span><span class="v ${uv?"uv":""}">${v?esc(v):"—"}</span></div>`;}
-function listHtml(arr){return arr.length?`<ul class="cv">${arr.map(it=>`<li class="${it.verified?"":""}" ${it.verified?"":'style="color:var(--verify)"'}>${esc(it.line)}</li>`).join("")}</ul>`:`<div style="font-size:11.5px;color:#5a5446">NONE FOUND</div>`;}
+function listHtml(arr){return arr.length?`<ul class="cv">${arr.map(it=>{const st=itemStatus(it);const sfx=st?` <b style="color:${st.warn?"#b26a00":"#2e7d32"}">— ${esc(st.txt)}</b>`:"";return `<li ${it.verified?"":'style="color:var(--verify)"'}>${esc(it.line)}${sfx}</li>`;}).join("")}</ul>`:`<div style="font-size:11.5px;color:#5a5446">NONE FOUND</div>`;}
 function buildReport(){
   const M=MODEL, uv=o=>o.v&&!o.verified;
   const draft=anyUnverified();
+  // reconciliation summary + chain findings (Features A & B)
+  const openN=M.mortgages.filter(m=>m.status==="Open").length, relN=M.mortgages.filter(m=>m.status==="Released").length, uncN=M.mortgages.length-openN-relN;
+  const mortSummary=M.mortgages.length?`<div style="font-size:11px;color:#5a5446;margin-top:4px">Mortgages: ${openN} open, ${relN} released${uncN>0?`, ${uncN} unreconciled`:""}.</div>`:"";
+  const opRows=M.chain.filter(c=>c.flag==="otherProperty");
+  const notes=[...(M.chainNotes||[]),...opRows.map(c=>`Possible other property (verify parcel): ${c.line}`)];
+  const chainNotesHtml=notes.length?`<div class="sec">NOTES ON CHAIN</div><ul class="cv">${notes.map(n=>`<li style="color:var(--verify)">⚠ ${esc(n)}</li>`).join("")}</ul>`:"";
   const meta=(label,o)=>`<span class="m"><b>${label}</b><span ${uv(o)?'style="color:var(--verify)"':''}>${o.v?esc(o.v):"—"}</span></span>`;
   const cert = SIGNATURE ? `
     <div class="certblock">I certify that I have reviewed this abstract and that, to the best of my knowledge, it reflects the records examined as of the stated search date.</div>
@@ -647,7 +720,8 @@ function buildReport(){
       <div class="legal" ${uv(M.legalDescription)?'style="color:var(--verify)"':""}>${M.legalDescription.v?esc(M.legalDescription.v):"[TO BE VERIFIED — pull recorded instrument]"}</div>
 
       <div class="sec">CHAIN OF TITLE / DIRECT CONVEYANCES</div>${listHtml(M.chain)}
-      <div class="sec">MORTGAGES / DEEDS OF TRUST</div>${listHtml(M.mortgages)}
+      ${chainNotesHtml}
+      <div class="sec">MORTGAGES / DEEDS OF TRUST</div>${listHtml(M.mortgages)}${mortSummary}
       <div class="sec">ASSIGNMENTS</div>${listHtml(M.assignments)}
       <div class="sec">SATISFACTIONS / RELEASES</div>${listHtml(M.satisfied)}
       <div class="sec">JUDGMENTS</div>${listHtml(M.judgments)}
@@ -675,7 +749,7 @@ function buildReport(){
    ========================================================================= */
 function googleDocHtml(){
   const M=MODEL; const r=(k,o)=>`<tr><td style="font-weight:bold;width:30%">${k}</td><td style="${o.verified?"":"color:#c00"}">${esc(o.v||"[TO BE VERIFIED]")}</td></tr>`;
-  const li=arr=>arr.length?`<ul>${arr.map(i=>`<li style="${i.verified?"":"color:#c00"}">${esc(i.line)}</li>`).join("")}</ul>`:"<p>NONE FOUND</p>";
+  const li=arr=>arr.length?`<ul>${arr.map(i=>{const st=itemStatus(i);return `<li style="${i.verified?"":"color:#c00"}">${esc(i.line)}${st?` — ${esc(st.txt)}`:""}</li>`;}).join("")}</ul>`:"<p>NONE FOUND</p>";
   return `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset="utf-8"></head>
   <body style="font-family:'Times New Roman',serif">
   <h1 style="text-align:center">Apex Abstracts — Title Search Report</h1>
@@ -708,7 +782,7 @@ function configEndpoint(){
 // builds the {{PLACEHOLDER}} -> value map the Apps Script fills; unverified values keep a red [TO VERIFY] flag
 function gdocTokens(){
   const M=MODEL, sv=o=>o.v?(o.verified?o.v:o.v+" [TO VERIFY]"):"";
-  const list=arr=>arr.length?arr.map(it=>"• "+(it.verified?it.line:it.line+" [TO VERIFY]")).join("\n"):"NONE FOUND";
+  const list=arr=>arr.length?arr.map(it=>{const st=itemStatus(it);return "• "+(it.verified?it.line:it.line+" [TO VERIFY]")+(st?" — "+st.txt:"");}).join("\n"):"NONE FOUND";
   return {
     SEARCH_DATE:sv(M.searchDate),INDEX_DATE:sv(M.indexDate),PROPERTY:sv(M.property),
     CONDO_SUBDIVISION:sv(M.condoSubdivision),HUNDRED:sv(M.hundred),PARCEL_NUMBER:sv(M.parcelNumber),

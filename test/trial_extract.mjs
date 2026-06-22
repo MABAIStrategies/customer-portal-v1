@@ -47,7 +47,7 @@ const SOURCES = [
 const store = { recorder: read("1_recorder.txt"), tax: read("2_tax.txt"), court: read("3_court.txt"), statelien: read("4_state_lien.txt") };
 
 const NEEDED = ["detectDelim","splitLine","guessCanon","looksHeader","parseText",
-                "docFull","classify","sortKey","field","moneyLines","extractSource","composeNorthStar"];
+                "docFull","classify","sortKey","field","moneyLines","extractSource","normName","shareTok","lenderReaches","reconcile","analyzeChain","composeNorthStar"];
 const bundle = NEEDED.map(n => extractFn(HTML, n)).join("\n") + "\nreturn { composeNorthStar };";
 const { composeNorthStar } = new Function("SOURCES", "store", bundle)(SOURCES, store);
 
@@ -95,6 +95,16 @@ ok("4 satisfactions routed", M.satisfied.length === 4);
 ok("2 assignments routed", M.assignments.length === 2);
 ok("Civil judgment routed (Discover)", M.judgments.some(x=>/Discover/.test(x.line)));
 ok("Federal tax lien routed (IRS)", M.federalLien.some(x=>/Internal Revenue|IRS/.test(x.line)));
+
+console.log("\nRECONCILIATION & CHAIN FLAGS (Features A & B)");
+const openM = M.mortgages.filter(m=>m.status==="Open");
+const relM  = M.mortgages.filter(m=>m.status==="Released");
+ok("1 mortgage OPEN (Rocket 2021)", openM.length===1 && /ROCKET/.test(openM[0].line));
+ok("4 mortgages RELEASED", relM.length===4);
+ok("Countrywide→BofA mortgage released via assignment alias", M.mortgages.some(m=>/COUNTRYWIDE/.test(m.line)&&m.status==="Released"));
+ok("0 unmatched satisfactions", M.satisfied.every(s=>s.flag!=="unmatched"));
+ok("Chain: 0 other-property flags", M.chain.every(c=>c.flag!=="otherProperty"));
+ok("Chain: 0 gap notes", (M.chainNotes||[]).length===0);
 
 console.log("\n" + "=".repeat(80));
 console.log(`RESULT: ${pass} passed, ${fail} failed`);

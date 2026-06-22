@@ -43,7 +43,7 @@ const SOURCES = [
 const store = { recorder: read("1_recorder.txt"), tax: read("2_tax.txt"), court: read("3_court.txt"), statelien: read("4_state_lien.txt") };
 
 const NEEDED = ["detectDelim","splitLine","guessCanon","looksHeader","parseText",
-                "docFull","classify","sortKey","field","moneyLines","extractSource","composeNorthStar"];
+                "docFull","classify","sortKey","field","moneyLines","extractSource","normName","shareTok","lenderReaches","reconcile","analyzeChain","composeNorthStar"];
 const bundle = NEEDED.map(n => extractFn(HTML, n)).join("\n") + "\nreturn { composeNorthStar };";
 const { composeNorthStar } = new Function("SOURCES", "store", bundle)(SOURCES, store);
 const M = composeNorthStar();
@@ -81,6 +81,16 @@ ok("1 judgment (no $ sign — Midland)", M.judgments.some(x=>/Midland/.test(x.li
 ok("Federal lien (IRS)", M.federalLien.some(x=>/Internal Revenue/.test(x.line)));
 ok("Other liens: lis pendens AND municipal sewer", M.otherLiens.some(x=>/Lis Pendens|Discover/i.test(x.line)) && M.otherLiens.some(x=>/sewer|Municipal/i.test(x.line)));
 ok("Other-property row present (to be unchecked in app)", M.chain.some(x=>/NELSON|OAK ST/i.test(x.line)));
+
+console.log("\nRECONCILIATION & CHAIN FLAGS (Features A & B)");
+const openM = M.mortgages.filter(m=>m.status==="Open");
+const relM  = M.mortgages.filter(m=>m.status==="Released");
+ok("2 mortgages OPEN (both 2018 Rockets)", openM.length===2 && openM.every(m=>/ROCKET/.test(m.line)));
+ok("1 mortgage RELEASED (1984 Farmers)", relM.length===1 && /FARMERS/.test(relM[0].line));
+ok("0 unmatched satisfactions", M.satisfied.every(s=>s.flag!=="unmatched"));
+ok("NELSON row flagged other-property", M.chain.some(c=>/NELSON/i.test(c.line)&&c.flag==="otherProperty"));
+ok("Exactly 1 other-property flag", M.chain.filter(c=>c.flag==="otherProperty").length===1);
+ok("1 gap note (Sheriff tax-sale break)", (M.chainNotes||[]).length===1 && /SHERIFF|GREENWOOD/i.test(M.chainNotes[0]));
 
 console.log("\n" + "=".repeat(80));
 console.log(`RESULT: ${pass} passed, ${fail} failed`);
