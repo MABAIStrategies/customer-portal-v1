@@ -301,7 +301,7 @@ function splitLine(line,d){
 function guessCanon(h){const s=(h||"").toLowerCase().replace(/[^a-z0-9]/g,"");
   if(/grantor|direct|from|mortgagor|assignor|debtor/.test(s))return "grantor";
   if(/grantee|indirect|mortgagee|assignee|creditor|party|^to$/.test(s))return "grantee";
-  if(/(rec|record|file|recorded)date|^date$|recdate|dateofrecord/.test(s))return "recDate";
+  if(/(rec|record|file|recorded|recording|doc|document|instrument)date|daterecorded|^date$|recdate|dateofrecord/.test(s))return "recDate";
   if(/doctype|documenttype|^type$|instrumenttype|kind|recordtype/.test(s))return "docType";
   if(/book|volume|^vol$|liber/.test(s))return "book";
   if(/^page$|^pg$|folio/.test(s))return "page";
@@ -331,7 +331,7 @@ function classify(dt){const s=(dt||"").toUpperCase(); const has=(...a)=>a.some(x
   if(has("MORTGAGE","DEED OF TRUST")||/\bMTG\b|\bDOT\b|^M$/.test(s))return "mortCurrent";
   if(has("FEDERAL","IRS")||/\bFTL\b/.test(s))return "lienFederal";
   if(has("JUDG"))return "lienCivil";
-  if(has("TAX LIEN","MUNICIP")||/\bTAX\b/.test(s))return "lienTax";
+  if((has("TAX LIEN","MUNICIP")||/\bTAX\b/.test(s))&&!/DEED/.test(s))return "lienTax";
   if(has("LIEN","UCC","LIS PEND","MECH"))return "lienNotes";
   if(has("DEED")||/\bWD\b|\bQC\b|\bQCD\b|\bSW\b|\bSWD\b|\bSD\b|\bCD\b|\bTD\b|\bBD\b|\bGD\b|\bEXEC\b/.test(s))return "chain";
   return "review";}

@@ -1,0 +1,21 @@
+KENT COUNTY — GovOS / RECORDS SEARCH (export)
+PROPERTY ADDRESS: 110 Maple Avenue, Dover, DE 19901
+PARCEL: LC-00-066.00-01-15.00
+HUNDRED: East Dover Hundred
+SELLERS/OWNERS: James R. Carter and Angela M. Carter
+DEED RECORD: Instrument 2018-0033915
+LEGAL DESCRIPTION: ALL that certain lot, piece or parcel of land, situate in East Dover Hundred, Kent County, Delaware, lying on the West side of Maple Avenue, and being more particularly described as follows, to wit: BEGINNING at an iron pipe set on the West side of Maple Avenue, a corner for this lot and lands now or formerly of Reed; thence with said Maple Avenue South 12 degrees West 70.00 feet to a point; thence North 78 degrees West 140.00 feet to a point; thence North 12 degrees East 70.00 feet to a point; thence South 78 degrees East 140.00 feet to the point and place of BEGINNING, containing 9,800 square feet of land, be the same more or less.
+Results 1-11 of 11
+From|To|Doc Date|Kind|Liber|Folio|Reception #|Consideration
+HASTINGS DEVELOPMENT CORP|MILLER, RAYMOND E|03/14/84|Deed-Warranty|0412|118||$59,900
+MILLER, RAYMOND E|FARMERS BANK OF DELAWARE|03/14/84|Mtg|0413|22||$47,000
+
+FARMERS BANK OF DELAWARE|MILLER, RAYMOND E|11/02/98|Sat of Mtg|0890|5||
+MILLER, RAYMOND E & DORIS J|GREENWOOD HOLDINGS LLC|2003-06-30|Quit Claim Deed|1455|201|2003-0061233|$1.00
+KENT COUNTY SHERIFF|PINE VALLEY LLC|08/19/2009|Tax Deed|2110|88|2009-0044820|$31,500
+PINE VALLEY LLC|CARTER, JAMES R & ANGELA M|06/15/2018|Deed-Warranty|||2018-0033915|$219,000
+CARTER, JAMES R|ROCKET MORTGAGE LLC|06/15/2018|Mtg|||2018-0033916|$208,050
+|ROCKET MORTGAGE LLC|07/01/2018|Mtg|||2018-0034001|$15,000
+ROCKET MORTGAGE LLC|LAKEVIEW LOAN SERVICING LLC|02/14/2020|Assignment of Mtge|||2020-0009912|
+DISCOVER BANK|CARTER, JAMES R|01/22/2023|Lis Pendens|||2023-0004551|
+SUNRISE BUILDERS LLC|NELSON, PATRICIA A (150 OAK ST, DIFFERENT PARCEL)|05/05/2015|Deed-Warranty|2890|44|2015-0027781|$180,000
