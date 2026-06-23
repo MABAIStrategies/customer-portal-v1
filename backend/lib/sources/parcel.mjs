@@ -62,29 +62,51 @@ function parseDetail($) {
   };
 }
 
-export async function lookupParcel(addr, session = new Session()) {
+// retry the whole lookup with a fresh session if the portal returns an empty/partial
+// result (it occasionally does under rapid sequential requests).
+export async function lookupParcel(addr, session) {
+  let last = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise(r => setTimeout(r, 1200 * attempt));
+    last = await _lookupOnce(addr, new Session());
+    if (!last.error && last.owner && last.parcel) return last;
+  }
+  return last;
+}
+
+async function _lookupOnce(addr, session = new Session()) {
   const a = parseAddress(addr);
-  const page = await session.get(URL0);
-  // search by street number + distinctive street-name token (Contains handles named directions like "North Star")
-  const results = await session.postForm(URL0, {
-    [P + "ContainsStartsWith"]: "_RadioButtonStartsWith",
-    [P + "_TextBoxStreetNumber"]: a.number,
-    [P + "StreetName"]: "_RadioButtonStreetNameContains",
-    [P + "_TextBoxStreetName"]: a.token,
-    [P + "_TextBoxCity"]: "",
-    [P + "_ButtonSearch"]: "Search",
-  }, page);
-  // find the results row matching our street number, capture its Details postback target
-  let target = null, rowOwner = "", rowParcel = "";
-  results.$("#ctl00_ctl00_ContentPlaceHolder1_ContentPlaceHolder1__GridViewResults tr").each((_, tr) => {
-    const cells = results.$(tr).find("td").map((_, td) => clean(results.$(td).text())).get();
-    const link = results.$(tr).find("a[href*='LinkButtonDetails']").attr("href");
-    if (link && cells.join(" ").includes(`${a.number} `) && new RegExp(a.token, "i").test(cells.join(" "))) {
-      const m = link.match(/__doPostBack\('([^']+)'/);
-      if (m && !target) { target = m[1]; rowParcel = cells[0]; rowOwner = cells[cells.length - 1]; }
-    }
-  });
-  if (!target) return { address: addr, parsed: a, error: "no matching parcel row", rows: results.$("#ctl00_ctl00_ContentPlaceHolder1_ContentPlaceHolder1__GridViewResults tr").length };
-  const detail = await session.postForm(URL0, { __EVENTTARGET: target, __EVENTARGUMENT: "" }, results);
+  const GRID = "#ctl00_ctl00_ContentPlaceHolder1_ContentPlaceHolder1__GridViewResults tr";
+
+  async function attempt(streetMode, name) {
+    const page = await session.get(URL0);
+    const results = await session.postForm(URL0, {
+      [P + "ContainsStartsWith"]: "_RadioButtonStartsWith",
+      [P + "_TextBoxStreetNumber"]: a.number,
+      [P + "StreetName"]: streetMode,
+      [P + "_TextBoxStreetName"]: name,
+      [P + "_TextBoxCity"]: "",
+      [P + "_ButtonSearch"]: "Search",
+    }, page);
+    let target = null;
+    results.$(GRID).each((_, tr) => {
+      const cells = results.$(tr).find("td").map((_, td) => clean(results.$(td).text())).get();
+      const link = results.$(tr).find("a[href*='LinkButtonDetails']").attr("href");
+      if (!link) return;
+      const addrCell = cells.find(c => new RegExp(`^${a.number}\\b`).test(c)) || "";
+      if (addrCell && new RegExp(a.token, "i").test(addrCell)) {
+        const m = link.match(/__doPostBack\('([^']+)'/);
+        if (m && !target) target = m[1];
+      }
+    });
+    return { results, target };
+  }
+
+  // StartsWith(full street name) is precise; fall back to Contains(token) for named directions
+  let r = await attempt("_RadioButtonStreetNameStartsWith", a.name);
+  if (!r.target) r = await attempt("_RadioButtonStreetNameContains", a.token);
+  if (!r.target) return { address: addr, parsed: a, error: "no matching parcel row", rows: r.results.$(GRID).length };
+
+  const detail = await session.postForm(URL0, { __EVENTTARGET: r.target, __EVENTARGUMENT: "" }, r.results);
   return { address: addr, source: "assessor", ...parseDetail(detail.$) };
 }

@@ -41,6 +41,12 @@ export class Session {
         signal: ctrl.signal,
       });
       this._absorb(res);
+      // polite backoff on throttle/rate-limit responses (429/503, and this portal's 247)
+      if ([429, 503, 247].includes(res.status) && attempt < 3) {
+        const wait = (parseInt(res.headers.get("retry-after")) * 1000) || (1500 * Math.pow(2, attempt));
+        await new Promise(r => setTimeout(r, wait));
+        return this._fetch(url, init, attempt + 1);
+      }
       // follow redirects manually so cookies/relative Location are handled
       if ([301, 302, 303, 307, 308].includes(res.status)) {
         const loc = res.headers.get("location");
