@@ -95,7 +95,8 @@ function renderReview(d) {
   if (f.otherProperty) chips.push(`<span class="chip flag">${f.otherProperty} possible other-property</span>`);
   if (f.chainNotes) chips.push(`<span class="chip warn">${f.chainNotes} chain note${f.chainNotes>1?"s":""}</span>`);
   if (f.unverified) chips.push(`<span class="chip warn">${f.unverified} to verify</span>`);
-  chips.push(`<span class="chip ${f.browserWired?"ok":"warn"}">${f.browserWired?"recorder/court/lien: live":"recorder/court/lien: pending worker"}</span>`);
+  chips.push(`<span class="chip ${f.source==="attom"?"ok":"warn"}">source: ${f.source==="attom"?"ATTOM (licensed)":"assessor (fallback)"}</span>`);
+  chips.push(`<span class="chip warn">judgments: manual</span>`);
 
   // report inside an isolated iframe; review mode draws a subtle red outline on flagged data
   const reviewCss = `<style>

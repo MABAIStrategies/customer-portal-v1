@@ -45,11 +45,27 @@ function extractFn(src, name) {
   throw new Error(`unbalanced braces extracting ${name}`);
 }
 
+/** Slice `const <name> = { ... };` out by matching braces — reformatting-proof
+ *  (doesn't assume the whole object literal is on one line). */
+function extractObjConst(src, name) {
+  const m = src.match(new RegExp(`const\\s+${name}\\s*=\\s*\\{`));
+  if (!m) throw new Error(`const ${name} not found in HTML`);
+  const start = m.index, open = src.indexOf("{", start);
+  let depth = 0, inStr = null, esc = false;
+  for (let i = open; i < src.length; i++) {
+    const c = src[i];
+    if (inStr) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === inStr) inStr = null; continue; }
+    if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
+    if (c === "{") depth++;
+    else if (c === "}") { depth--; if (depth === 0) return src.slice(start, i + 1) + ";"; }
+  }
+  throw new Error(`unbalanced braces extracting const ${name}`);
+}
+
 // Pull the pure functions (and the CANON map literal) the browser actually ships.
 const NEEDED = ["detectDelim", "splitLine", "looksHeader", "guessCanon", "parseText",
                 "classify", "docFull", "sortKey"];
-const canonLine = HTML.split("\n").find(l => /const\s+CANON\s*=/.test(l)).trim();
-const bundle = canonLine + "\nconst CANON_KEYS=Object.keys(CANON);\n" +
+const bundle = extractObjConst(HTML, "CANON") + "\nconst CANON_KEYS=Object.keys(CANON);\n" +
   NEEDED.map(n => extractFn(HTML, n)).join("\n") +
   `\nreturn { ${NEEDED.join(", ")}, CANON, CANON_KEYS };`;
 const P = new Function(bundle)();

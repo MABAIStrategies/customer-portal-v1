@@ -4,7 +4,7 @@
   "private": true,
   "description": "Apex Abstracts — offline, single-file Delaware title-abstracting tools plus the extraction accuracy suite.",
   "scripts": {
-    "test": "node test/parser_test.mjs && node test/extract_test.mjs && node test/trial_extract.mjs && node test/trial2_extract.mjs && node test/trial3_extract.mjs",
+    "test": "node test/parser_test.mjs && node test/extract_test.mjs && node test/trial_extract.mjs && node test/trial2_extract.mjs && node test/trial3_extract.mjs && node test/attom_test.mjs",
     "build": "node tools/build_studio.mjs"
   },
   "license": "SEE LICENSE IN LICENSE"

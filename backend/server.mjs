@@ -33,7 +33,7 @@ const server = http.createServer(async (req, res) => {
         otherProperty: r.model.chain.filter(c => c.flag === "otherProperty").length,
         unverified: [...["property","parcelNumber","sellersOwners","legalDescription","taxStatus"]
           .filter(k => r.model[k] && r.model[k].v && !r.model[k].verified)].length,
-        browserWired: r.browserWired,
+        source: r.source,
       };
       return send(res, 200, "application/json", JSON.stringify({ ok: true, address: r.address,
         owner: r.assessor.owner, parcel: r.assessor.parcel, html: r.html, flags }));
