@@ -62,16 +62,38 @@ function parseDetail($) {
   };
 }
 
+// In-memory result cache + polite pacing so a live demo never trips the assessor's
+// rate-limit (it returns a 247 throttle under rapid/repeated hits). Cache makes repeated
+// lookups of the same address instant; the gate serializes lookups with a minimum gap.
+const _cache = new Map();           // normalized address -> resolved record
+let _chain = Promise.resolve(), _lastAt = 0;
+const MIN_GAP_MS = 900;
+function _paced(fn) {
+  const run = _chain.then(async () => {
+    const wait = MIN_GAP_MS - (Date.now() - _lastAt);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    try { return await fn(); } finally { _lastAt = Date.now(); }
+  });
+  _chain = run.catch(() => {});     // keep the gate alive even if a lookup throws
+  return run;
+}
+
 // retry the whole lookup with a fresh session if the portal returns an empty/partial
 // result (it occasionally does under rapid sequential requests).
 export async function lookupParcel(addr, session) {
-  let last = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt) await new Promise(r => setTimeout(r, 1200 * attempt));
-    last = await _lookupOnce(addr, new Session());
-    if (!last.error && last.owner && last.parcel) return last;
-  }
-  return last;
+  const key = String(addr || "").trim().toUpperCase();
+  if (_cache.has(key)) return _cache.get(key);
+  const result = await _paced(async () => {
+    let last = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt) await new Promise(r => setTimeout(r, 1200 * attempt));
+      last = await _lookupOnce(addr, new Session());
+      if (!last.error && last.owner && last.parcel) return last;
+    }
+    return last;
+  });
+  if (result && !result.error && result.owner) _cache.set(key, result);  // cache only good hits
+  return result;
 }
 
 async function _lookupOnce(addr, session = new Session()) {
