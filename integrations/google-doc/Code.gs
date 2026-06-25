@@ -20,7 +20,8 @@ var CONFIG = {
 /** POST handler — the app calls this with {title, tokens:{...}} as a text/plain body. */
 function doPost(e) {
   try {
-    var payload = JSON.parse(e.postData.contents || '{}');
+    var contents = (e && e.postData && e.postData.contents) ? e.postData.contents : '{}';
+    var payload = JSON.parse(contents);
     var tokens  = payload.tokens || {};
     var title   = payload.title || ('Apex Title Report — ' + isoDate_());
 
@@ -28,9 +29,7 @@ function doPost(e) {
     var copy = DriveApp.getFileById(templateId).makeCopy(title);
     if (CONFIG.OUTPUT_FOLDER_ID) {
       try {
-        var folder = DriveApp.getFolderById(CONFIG.OUTPUT_FOLDER_ID);
-        folder.addFile(copy);
-        DriveApp.getRootFolder().removeFile(copy);
+        copy.moveTo(DriveApp.getFolderById(CONFIG.OUTPUT_FOLDER_ID));
       } catch (moveErr) { /* leave in My Drive if folder id is wrong */ }
     }
 
@@ -57,7 +56,9 @@ function doGet() {
 
 /* ----------------------------- helpers ----------------------------- */
 
-function sanitize_(v) { return (v === null || v === undefined) ? '' : String(v); }
+// Escape literal '$' as '$$' — Apps Script replaceText() treats '$' in the replacement
+// as a group reference, which would corrupt/throw on money values ($142,800, etc.).
+function sanitize_(v) { return (v === null || v === undefined) ? '' : String(v).replace(/\$/g, '$$$$'); }
 function isoDate_()   { return new Date().toISOString().slice(0, 10); }
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);

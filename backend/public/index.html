@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apex Abstracts — Title Search</title>
+<style>
+  :root{
+    --bg:#080E14; --panel:#0E141C; --panel2:#161E26; --line:#222A32;
+    --ink:#EFF2F5; --muted:#9299A1; --cyan:#00E0EA; --cyan2:#00D4FF; --verify:#d64545;
+    --sans:"Inter",ui-sans-serif,system-ui,sans-serif;
+    --disp:"Space Grotesk","Inter",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#0c1620,var(--bg));color:var(--ink);font-family:var(--sans);min-height:100vh}
+  header{display:flex;align-items:center;gap:12px;padding:18px 26px;border-bottom:1px solid var(--line)}
+  .seal{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;font-family:var(--disp);font-weight:700;color:var(--bg);background:linear-gradient(135deg,var(--cyan),var(--cyan2));box-shadow:0 0 24px rgba(0,224,234,.35)}
+  .brand{font-family:var(--disp);font-weight:600;letter-spacing:.2px;font-size:18px}
+  .eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted)}
+  main{max-width:980px;margin:0 auto;padding:40px 22px 80px}
+  .hero{text-align:center;margin:38px 0 26px}
+  .hero h1{font-family:var(--disp);font-weight:600;font-size:34px;letter-spacing:-.01em;margin:0 0 8px}
+  .hero p{color:var(--muted);margin:0}
+  .ask{display:flex;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;max-width:640px;margin:22px auto 0;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+  .ask input{flex:1;background:transparent;border:0;color:var(--ink);font-size:16px;padding:12px 12px;outline:none;font-family:var(--sans)}
+  .ask button{font-family:var(--disp);font-weight:600;border:0;border-radius:10px;padding:0 20px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06121a;cursor:pointer;font-size:15px}
+  .ask button:disabled{opacity:.5;cursor:default}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;margin-top:10px;letter-spacing:.04em}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:26px;overflow:hidden}
+  .card .top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--panel2)}
+  .who{font-family:var(--disp);font-weight:600}
+  .who small{display:block;color:var(--muted);font-weight:400;font-family:var(--mono);font-size:11px;letter-spacing:.05em;margin-top:3px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .chip.warn{color:#ffcf8b;border-color:#7a5a1f;background:#3a2a0e55}
+  .chip.ok{color:#8ee6a6;border-color:#2f5d3a;background:#10341c55}
+  .chip.flag{color:#ff9b9b;border-color:#7a2f2f;background:#3a0e0e55}
+  .frameWrap{background:#fff;max-height:62vh;overflow:auto}
+  iframe{width:100%;height:1100px;border:0;display:block;background:#fff}
+  .actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--line);background:var(--panel2)}
+  .btn{font-family:var(--disp);font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;font-size:14px;border:1px solid var(--line);background:transparent;color:var(--ink)}
+  .btn.ghost{color:var(--muted)}
+  .btn.primary{border:0;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06121a}
+  .btn.danger{color:#ff9b9b;border-color:#5a2a2a}
+  .review-note{font-family:var(--mono);font-size:11px;color:var(--verify);padding:10px 20px;border-top:1px dashed #5a2a2a;background:#1a0e0e33}
+  .btn:disabled{opacity:.45;cursor:default}
+  .docstatus{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0 20px;font-family:var(--mono);font-size:12px}
+  .docstatus:empty{display:none}
+  .docstatus{padding-top:12px}
+  .doc-ok{color:#8ee6a6}
+  .doc-err{color:#ff9b9b}
+  .doc-hint{color:var(--muted)}
+  .doc-link{color:var(--cyan);text-decoration:none;word-break:break-all}
+  .doc-link:hover{text-decoration:underline}
+  .docstatus .btn{padding:6px 12px;font-size:12px}
+  .err{color:#ff9b9b;background:#2a0e0e55;border:1px solid #5a2a2a;border-radius:12px;padding:14px 16px;margin-top:22px;font-family:var(--mono);font-size:13px}
+  .spinner{display:inline-block;width:15px;height:15px;border:2px solid #06121a55;border-top-color:#06121a;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <header>
+    <div class="seal">A</div>
+    <div><div class="brand">Apex Abstracts</div><div class="eyebrow">Title Search · Delaware</div></div>
+  </header>
+  <main>
+    <div class="hero">
+      <h1>Search a property.</h1>
+      <p>Type one Delaware address or parcel number. We'll assemble the title search draft.</p>
+      <form class="ask" id="ask">
+        <input id="addr" autocomplete="off" placeholder="e.g. 226 N Star Road, Newark DE  —  or  08-023.20-089" required>
+        <button id="go" type="submit">Generate</button>
+      </form>
+      <div class="hint">Pulls Recorder · Assessment/Tax · Court · State-Lien → drafts the Apex North-Star report</div>
+    </div>
+    <div id="out"></div>
+  </main>
+
+<script>
+const out = document.getElementById("out");
+const form = document.getElementById("ask");
+const go = document.getElementById("go");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const address = document.getElementById("addr").value.trim();
+  if (!address) return;
+  go.disabled = true; go.innerHTML = '<span class="spinner"></span>Working';
+  out.innerHTML = "";
+  try {
+    const res = await fetch("/api/generate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ address }) });
+    const data = await res.json();
+    if (!data.ok) { out.innerHTML = `<div class="err">Could not assemble a draft for “${address}”.<br>Reason: ${data.error||"unknown"} (stage: ${data.stage||"?"}).</div>`; return; }
+    renderReview(data);
+  } catch (err) {
+    out.innerHTML = `<div class="err">Network error: ${err.message}</div>`;
+  } finally { go.disabled = false; go.textContent = "Generate"; }
+});
+
+function renderReview(d) {
+  const f = d.flags || {};
+  const chips = [];
+  if (f.openMortgages) chips.push(`<span class="chip flag">${f.openMortgages} open mortgage${f.openMortgages>1?"s":""}</span>`);
+  if (f.otherProperty) chips.push(`<span class="chip flag">${f.otherProperty} possible other-property</span>`);
+  if (f.chainNotes) chips.push(`<span class="chip warn">${f.chainNotes} chain note${f.chainNotes>1?"s":""}</span>`);
+  if (f.unverified) chips.push(`<span class="chip warn">${f.unverified} to verify</span>`);
+  chips.push(`<span class="chip ${f.source==="attom"?"ok":"warn"}">source: ${f.source==="attom"?"ATTOM (licensed)":"assessor (fallback)"}</span>`);
+  chips.push(`<span class="chip warn">judgments: manual</span>`);
+
+  // report inside an isolated iframe; review mode draws a subtle red outline on flagged data
+  const reviewCss = `<style>
+    body{margin:0}
+    .v.uv{outline:1.5px solid rgba(214,69,69,.55);outline-offset:2px;border-radius:2px;background:rgba(214,69,69,.06)}
+    .legal[style*="verify"], li[style*="verify"]{outline:1.5px solid rgba(214,69,69,.4);outline-offset:2px;border-radius:3px}
+  </style>`;
+  const srcdoc = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/report.css">${reviewCss}</head><body class="printing">${d.html.replace(/<\/?body[^>]*>/g,"")}</body></html>`;
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `
+    <div class="top">
+      <div class="who">${esc(d.owner||"—")}<small>${esc(d.address)} · Parcel ${esc(d.parcel||"—")}</small></div>
+      <div class="chips">${chips.join("")}</div>
+    </div>
+    <div class="frameWrap"><iframe></iframe></div>
+    <div class="review-note">Human-in-the-loop review — items in red need your oversight before this goes to the customer.</div>
+    <div class="docstatus" data-el="docstatus"></div>
+    <div class="actions">
+      <button class="btn danger" data-act="cancel">Cancel</button>
+      <button class="btn ghost" data-act="skip">Skip oversight</button>
+      <button class="btn" data-act="gdoc"${d.gdocEnabled?"":" disabled title=\"Connect Google Doc in Setup\""}>📄 Generate Google Doc</button>
+      <button class="btn" data-act="pdf">⬇ Download PDF</button>
+      <button class="btn primary" data-act="generate">Generate final</button>
+    </div>`;
+  out.appendChild(card);
+  const iframe = card.querySelector("iframe");
+  iframe.srcdoc = srcdoc;
+  const docstatus = card.querySelector('[data-el="docstatus"]');
+
+  card.querySelector('[data-act="cancel"]').onclick = () => { card.remove(); };
+
+  // One-click PDF: open a clean, print-ready window of the branded report.
+  const finalize = () => {
+    const w = window.open("", "_blank");
+    if (!w) { alert("Please allow pop-ups to download the PDF."); return; }
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Apex Title Search — ${esc(d.address)}</title><link rel="stylesheet" href="/report.css"></head><body class="printing">${d.html.replace(/<\/?body[^>]*>/g,"")}</body></html>`);
+    w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch(e){} }, 600);
+  };
+  card.querySelector('[data-act="skip"]').onclick = finalize;
+  card.querySelector('[data-act="generate"]').onclick = finalize;
+  card.querySelector('[data-act="pdf"]').onclick = finalize;
+
+  // One-click Google Doc: POST title + tokens, then surface a shareable link.
+  const gbtn = card.querySelector('[data-act="gdoc"]');
+  if (gbtn && !gbtn.disabled) {
+    if (!d.gdocEnabled) { docstatus.innerHTML = `<span class="doc-hint">Connect Google Doc in Setup</span>`; }
+    gbtn.onclick = async () => {
+      gbtn.disabled = true; const label = gbtn.textContent; gbtn.innerHTML = '<span class="spinner"></span>Creating';
+      docstatus.innerHTML = "";
+      try {
+        const res = await fetch("/api/gdoc", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ title: d.title, tokens: d.tokens }) });
+        const data = await res.json();
+        if (data.ok && data.url) {
+          docstatus.innerHTML = `<span class="doc-ok">Google Doc ready:</span>
+            <a class="doc-link" href="${esc(data.url)}" target="_blank" rel="noopener">${esc(data.url)}</a>
+            <button class="btn ghost doc-copy" type="button">Copy link</button>
+            <a class="btn ghost" href="${esc(data.url)}" target="_blank" rel="noopener">Open</a>`;
+          const copy = docstatus.querySelector(".doc-copy");
+          copy.onclick = async () => { try { await navigator.clipboard.writeText(data.url); copy.textContent = "Copied"; setTimeout(()=>copy.textContent="Copy link",1500); } catch(e){ copy.textContent="Copy failed"; } };
+        } else if (data.reason === "not_configured") {
+          docstatus.innerHTML = `<span class="doc-err">Google Doc not configured. Set GDOC_ENDPOINT to your Apps Script /exec URL.</span>`;
+        } else {
+          docstatus.innerHTML = `<span class="doc-err">Couldn't create the doc: ${esc(data.error||data.reason||"unknown")}.</span>`;
+        }
+      } catch (err) {
+        docstatus.innerHTML = `<span class="doc-err">Network error: ${esc(err.message)}</span>`;
+      } finally { gbtn.disabled = false; gbtn.textContent = label; }
+    };
+  }
+}
+function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+</script>
+</body>
+</html>

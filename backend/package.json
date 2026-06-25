@@ -1,0 +1,14 @@
+{
+  "name": "apex-scraper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Phase-1 backend: address -> NCC/DE source scrape -> shipped North-Star pipeline.",
+  "scripts": {
+    "demo": "node run_demo.mjs"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "puppeteer": "^25.2.0"
+  }
+}

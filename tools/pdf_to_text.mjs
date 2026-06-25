@@ -7,7 +7,7 @@
 // or:  node tools/pdf_to_text.mjs <file.pdf>
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
@@ -16,7 +16,7 @@ let _lib = null;
 async function pdfjs() {
   if (_lib) return _lib;
   // The UMD bundle exposes the full API (incl. GlobalWorkerOptions) on `.default`.
-  const mod = await import(path.join(ROOT, "vendor/pdfjs/pdf.min.js"));
+  const mod = await import(pathToFileURL(path.join(ROOT, "vendor/pdfjs/pdf.min.js")).href);
   const L = mod.default && mod.default.getDocument ? mod.default : mod;
   L.GlobalWorkerOptions.workerSrc = path.join(ROOT, "vendor/pdfjs/pdf.worker.min.js");
   _lib = L;
@@ -44,13 +44,17 @@ export async function pdfToText(file) {
   const L = await pdfjs();
   const data = new Uint8Array(fs.readFileSync(file));
   const pdf = await L.getDocument({ data, isEvalSupported: false, useSystemFonts: false }).promise;
-  const out = [];
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const tc = await page.getTextContent();
-    out.push(itemsToText(tc.items));
+  try {
+    const out = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      out.push(itemsToText(tc.items));
+    }
+    return out.join("\n");
+  } finally {
+    await pdf.destroy();
   }
-  return out.join("\n");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

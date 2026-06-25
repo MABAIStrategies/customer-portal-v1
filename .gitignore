@@ -3,3 +3,6 @@
 # agent contact info. Kept local on purpose — regenerate with:
 #   node tools/render_report.mjs
 demo/address-trials/
+
+# Claude Code worktrees / agent state — never commit
+.claude/

@@ -13,67 +13,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { pdfToText } from "./pdf_to_text.mjs";
+import { runPipeline, STYLE } from "./pipeline.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
-const HTML = fs.readFileSync(path.join(ROOT, "Apex_Title_Studio.html"), "utf8");
-
-/* ---- lift the shipped functions/consts out of the single-file app ---------------------- */
-function liftFn(name) {
-  const m = HTML.match(new RegExp(`function\\s+${name}\\s*\\(`));
-  if (!m) throw new Error(`fn ${name} not found`);
-  const start = m.index, open = HTML.indexOf("{", start);
-  let d = 0, s = null, esc = false, lc = false, bc = false;
-  for (let i = open; i < HTML.length; i++) {
-    const c = HTML[i], n = HTML[i + 1];
-    if (lc) { if (c === "\n") lc = false; continue; }
-    if (bc) { if (c === "*" && n === "/") { bc = false; i++; } continue; }
-    if (s) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === s) s = null; continue; }
-    if (c === "/" && n === "/") { lc = true; i++; continue; }
-    if (c === "/" && n === "*") { bc = true; i++; continue; }
-    if (c === '"' || c === "'" || c === "`") { s = c; continue; }
-    if (c === "{") d++;
-    else if (c === "}") { if (--d === 0) return HTML.slice(start, i + 1); }
-  }
-  throw new Error(`unbalanced ${name}`);
-}
-function liftArrayConst(name) {
-  const m = HTML.match(new RegExp(`const\\s+${name}\\s*=\\s*\\[`));
-  if (!m) throw new Error(`const ${name} not found`);
-  const start = m.index, open = HTML.indexOf("[", start);
-  let d = 0, s = null, esc = false;
-  for (let i = open; i < HTML.length; i++) {
-    const c = HTML[i];
-    if (s) { if (esc) esc = false; else if (c === "\\") esc = true; else if (c === s) s = null; continue; }
-    if (c === '"' || c === "'" || c === "`") { s = c; continue; }
-    if (c === "[") d++;
-    else if (c === "]") { if (--d === 0) return HTML.slice(start, i + 1) + ";"; }
-  }
-  throw new Error(`unbalanced const ${name}`);
-}
-const STYLE = HTML.slice(HTML.indexOf("<style>") + 7, HTML.indexOf("</style>"));
-
-const FNS = ["detectDelim","splitLine","guessCanon","looksHeader","parseText","docFull","classify",
-  "sortKey","field","moneyLines","extractSource","normName","shareTok","lenderReaches","reconcile",
-  "analyzeChain","composeNorthStar","itemStatus","listHtml","anyUnverified","row","buildReport"];
-
-const preamble = `
-const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let __CAP="";
-const $=(sel)=>({ set innerHTML(v){ if(sel==="#reportwrap") __CAP=v; }, get innerHTML(){return "";}, style:{} });
-${liftArrayConst("SOURCES")}
-${liftArrayConst("SCALAR")}
-${liftArrayConst("LISTS")}
-`;
-const body = preamble + FNS.map(liftFn).join("\n") + `
-let SIGNATURE=null;
-let MODEL=composeNorthStar();
-if(opts){ for(const k in opts){ if(MODEL[k]&&"v"in MODEL[k]) MODEL[k]={v:opts[k],verified:false,source:"derived"}; } }
-buildReport();
-return { html:__CAP, model:MODEL };
-`;
-// store + opts are passed in; the lifted composeNorthStar reads the free var `store`.
-const runPipeline = new Function("store", "opts", body);
 
 /* ---- the per-vendor adapter: Public Data Records report -> shipped source zones --------- */
 const MONTHS = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12",

@@ -1,0 +1,36 @@
+{
+  "_note": "Representative ATTOM expandedprofile + expandedhistory response shapes for 226 N Star Rd (Wilson). Hand-built to the documented schema for offline mapping tests; replace with a recorded live response once ATTOM_API_KEY is provisioned.",
+  "profile": {
+    "status": { "code": 0, "msg": "SuccessWithResult", "total": 1 },
+    "property": [
+      {
+        "identifier": { "attomId": 145782301, "apn": "08-023.20-089", "fips": "10003" },
+        "address": { "line1": "226 NORTH STAR RD", "line2": "NEWARK, DE 19711", "oneLine": "226 NORTH STAR RD, NEWARK, DE 19711" },
+        "summary": { "propclass": "Single Family Residence / Townhouse", "yearbuilt": 1972, "legal1": "NORTH STAR SEC A LOT 30" },
+        "lot": { "lotnum": "30", "subdname": "NORTH STAR SEC A" },
+        "owner": {
+          "owner1": { "lastname": "WILSON", "firstnameandmi": "KEITH A" },
+          "owner2": { "lastname": "LANE", "firstnameandmi": "TAMMY M" }
+        },
+        "assessment": {
+          "assessed": { "assdttlvalue": 628000 },
+          "tax": { "taxamt": 4123.55, "taxyear": 2025 },
+          "mortgage": { "FirstConcurrent": { "amount": 390000, "lender": "WSFS BANK", "date": "2015-08-26", "documentnum": "20150904-0045396" } }
+        }
+      }
+    ]
+  },
+  "history": {
+    "status": { "code": 0, "msg": "SuccessWithResult", "total": 1 },
+    "property": [
+      {
+        "salehistory": [
+          { "saleTransDate": "2015-08-26", "amount": { "saleamt": 390000 }, "grantor": "VAN DZURA GARY M & ELIZABETH A", "grantee": "WILSON KEITH A & LANE TAMMY M", "documentnum": "20150904-0045396",
+            "mortgage": { "amount": 390000, "lender": "WSFS BANK", "date": "2015-08-26", "documentnum": "20150904-0045400" } },
+          { "saleTransDate": "2008-11-05", "amount": { "saleamt": 422000 }, "grantor": "ODELL COLLEEN N & SAUDER JEFFREY C", "grantee": "VAN DZURA GARY M & ELIZABETH A", "documentnum": "20081120-0075660" },
+          { "saleTransDate": "2000-08-30", "amount": { "saleamt": 165000 }, "grantor": "GIVEN WESLEY M & MARGARET", "grantee": "ODELL COLLEEN N & SAUDER JEFFREY C", "recordingbook": "2886", "recordingpage": "260" }
+        ]
+      }
+    ]
+  }
+}
