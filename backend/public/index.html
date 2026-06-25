@@ -44,6 +44,16 @@
   .btn.primary{border:0;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06121a}
   .btn.danger{color:#ff9b9b;border-color:#5a2a2a}
   .review-note{font-family:var(--mono);font-size:11px;color:var(--verify);padding:10px 20px;border-top:1px dashed #5a2a2a;background:#1a0e0e33}
+  .btn:disabled{opacity:.45;cursor:default}
+  .docstatus{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:0 20px;font-family:var(--mono);font-size:12px}
+  .docstatus:empty{display:none}
+  .docstatus{padding-top:12px}
+  .doc-ok{color:#8ee6a6}
+  .doc-err{color:#ff9b9b}
+  .doc-hint{color:var(--muted)}
+  .doc-link{color:var(--cyan);text-decoration:none;word-break:break-all}
+  .doc-link:hover{text-decoration:underline}
+  .docstatus .btn{padding:6px 12px;font-size:12px}
   .err{color:#ff9b9b;background:#2a0e0e55;border:1px solid #5a2a2a;border-radius:12px;padding:14px 16px;margin-top:22px;font-family:var(--mono);font-size:13px}
   .spinner{display:inline-block;width:15px;height:15px;border:2px solid #06121a55;border-top-color:#06121a;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
@@ -115,25 +125,61 @@ function renderReview(d) {
     </div>
     <div class="frameWrap"><iframe></iframe></div>
     <div class="review-note">Human-in-the-loop review — items in red need your oversight before this goes to the customer.</div>
+    <div class="docstatus" data-el="docstatus"></div>
     <div class="actions">
       <button class="btn danger" data-act="cancel">Cancel</button>
       <button class="btn ghost" data-act="skip">Skip oversight</button>
+      <button class="btn" data-act="gdoc"${d.gdocEnabled?"":" disabled title=\"Connect Google Doc in Setup\""}>📄 Generate Google Doc</button>
+      <button class="btn" data-act="pdf">⬇ Download PDF</button>
       <button class="btn primary" data-act="generate">Generate final</button>
     </div>`;
   out.appendChild(card);
   const iframe = card.querySelector("iframe");
   iframe.srcdoc = srcdoc;
+  const docstatus = card.querySelector('[data-el="docstatus"]');
 
   card.querySelector('[data-act="cancel"]').onclick = () => { card.remove(); };
-  const finalize = (skipped) => {
+
+  // One-click PDF: open a clean, print-ready window of the branded report.
+  const finalize = () => {
     const w = window.open("", "_blank");
-    const finalCss = skipped ? "" : "";
+    if (!w) { alert("Please allow pop-ups to download the PDF."); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Apex Title Search — ${esc(d.address)}</title><link rel="stylesheet" href="/report.css"></head><body class="printing">${d.html.replace(/<\/?body[^>]*>/g,"")}</body></html>`);
     w.document.close();
     setTimeout(() => { try { w.focus(); w.print(); } catch(e){} }, 600);
   };
-  card.querySelector('[data-act="skip"]').onclick = () => finalize(true);
-  card.querySelector('[data-act="generate"]').onclick = () => finalize(false);
+  card.querySelector('[data-act="skip"]').onclick = finalize;
+  card.querySelector('[data-act="generate"]').onclick = finalize;
+  card.querySelector('[data-act="pdf"]').onclick = finalize;
+
+  // One-click Google Doc: POST title + tokens, then surface a shareable link.
+  const gbtn = card.querySelector('[data-act="gdoc"]');
+  if (gbtn && !gbtn.disabled) {
+    if (!d.gdocEnabled) { docstatus.innerHTML = `<span class="doc-hint">Connect Google Doc in Setup</span>`; }
+    gbtn.onclick = async () => {
+      gbtn.disabled = true; const label = gbtn.textContent; gbtn.innerHTML = '<span class="spinner"></span>Creating';
+      docstatus.innerHTML = "";
+      try {
+        const res = await fetch("/api/gdoc", { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ title: d.title, tokens: d.tokens }) });
+        const data = await res.json();
+        if (data.ok && data.url) {
+          docstatus.innerHTML = `<span class="doc-ok">Google Doc ready:</span>
+            <a class="doc-link" href="${esc(data.url)}" target="_blank" rel="noopener">${esc(data.url)}</a>
+            <button class="btn ghost doc-copy" type="button">Copy link</button>
+            <a class="btn ghost" href="${esc(data.url)}" target="_blank" rel="noopener">Open</a>`;
+          const copy = docstatus.querySelector(".doc-copy");
+          copy.onclick = async () => { try { await navigator.clipboard.writeText(data.url); copy.textContent = "Copied"; setTimeout(()=>copy.textContent="Copy link",1500); } catch(e){ copy.textContent="Copy failed"; } };
+        } else if (data.reason === "not_configured") {
+          docstatus.innerHTML = `<span class="doc-err">Google Doc not configured. Set GDOC_ENDPOINT to your Apps Script /exec URL.</span>`;
+        } else {
+          docstatus.innerHTML = `<span class="doc-err">Couldn't create the doc: ${esc(data.error||data.reason||"unknown")}.</span>`;
+        }
+      } catch (err) {
+        docstatus.innerHTML = `<span class="doc-err">Network error: ${esc(err.message)}</span>`;
+      } finally { gbtn.disabled = false; gbtn.textContent = label; }
+    };
+  }
 }
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 </script>

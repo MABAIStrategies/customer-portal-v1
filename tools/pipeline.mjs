@@ -50,7 +50,8 @@ export const STYLE = HTML.slice(HTML.indexOf("<style>") + 7, HTML.indexOf("</sty
 
 const FNS = ["detectDelim","splitLine","guessCanon","looksHeader","parseText","docFull","classify",
   "sortKey","field","moneyLines","extractSource","normName","shareTok","lenderReaches","reconcile",
-  "analyzeChain","composeNorthStar","itemStatus","listHtml","anyUnverified","row","buildReport"];
+  "analyzeChain","composeNorthStar","itemStatus","listHtml","anyUnverified","row","buildReport",
+  "gdocTokens"];
 
 const preamble = `
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -65,7 +66,8 @@ let SIGNATURE=null;
 let MODEL=composeNorthStar();
 if(opts){ for(const k in opts){ if(MODEL[k]&&"v"in MODEL[k]) MODEL[k]={v:opts[k],verified:false,source:"derived"}; } }
 buildReport();
-return { html:__CAP, model:MODEL };
+const tokens = gdocTokens();
+return { html:__CAP, model:MODEL, tokens };
 `;
 // the lifted composeNorthStar reads the free var `store` (the four source-zone texts).
 export const runPipeline = new Function("store", "opts", body);
