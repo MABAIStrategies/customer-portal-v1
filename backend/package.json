@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local Phase-1 backend: address -> NCC/DE source scrape -> shipped North-Star pipeline.",
+  "description": "Phase-1 backend: address -> NCC/DE source scrape -> shipped North-Star pipeline.",
+  "scripts": {
+    "start": "node server.mjs"
+  },
   "dependencies": {
-    "cheerio": "^1.0.0",
-    "puppeteer": "^25.2.0"
+    "cheerio": "^1.0.0"
   }
 }
