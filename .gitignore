@@ -1,7 +1,6 @@
-# Address-trial inputs/outputs are generated from third-party consumer property
-# reports that contain residents' personal data (names, ages, deceased flags) and
-# agent contact info. Kept local on purpose — regenerate with:
-#   node tools/render_report.mjs
+# Address-trial inputs/outputs from third-party consumer property reports contain
+# residents' personal data (names, ages, deceased flags) and agent contact info.
+# Kept local on purpose — never commit.
 demo/address-trials/
 
 # Claude Code worktrees / agent state — never commit
