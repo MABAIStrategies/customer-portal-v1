@@ -454,7 +454,7 @@ function composeNorthStar(){
     ex.records.forEach(r=>{
       const line = r.narrative || `${r.grantor||"?"} → ${r.grantee||"?"} — ${docFull(r.docType)||"Deed"}${r.recDate?", "+r.recDate:""}${(r.book||r.page)?`, Bk ${r.book||"—"}/Pg ${r.page||"—"}`:""}${r.instrument?` (Instr ${r.instrument})`:""}`;
       const key=r.route+"|"+line; if(seen[key])return; seen[key]=1;
-      const item={line,verified:false,source:tag,recDate:r.recDate||"",
+      const item={line,verified:false,source:tag,recDate:r.recDate||"",amount:r.amount||"",
         grantor:r.grantor||"",grantee:r.grantee||"",book:r.book||"",page:r.page||"",instrument:r.instrument||"",docType:r.docType||"",narrative:!!r.narrative};
       if(r.route==="chain")model.chain.push(item);
       else if(r.route==="mortCurrent")model.mortgages.push(item);
@@ -682,6 +682,29 @@ function buildReport(){
   const opRows=M.chain.filter(c=>c.flag==="otherProperty");
   const notes=[...(M.chainNotes||[]),...opRows.map(c=>`Possible other property (verify parcel): ${c.line}`)];
   const chainNotesHtml=notes.length?`<div class="sec">NOTES ON CHAIN</div><ul class="cv">${notes.map(n=>`<li style="color:var(--verify)">⚠ ${esc(n)}</li>`).join("")}</ul>`:"";
+  // ---- North-Star prose for financial instruments (mortgages / assignments / satisfactions) ----
+  // The model keeps its canonical "grantor → grantee" line (the accuracy harnesses assert on it);
+  // the report renders it as a title abstractor would write it, from the same structured fields.
+  const docRef=it=>it.instrument?`Document No. ${esc(it.instrument)}`:(it.book?`Bk ${esc(it.book)}/Pg ${esc(it.page||"—")}`:"");
+  const fmtMoney=a=>{const s=String(a||"").replace(/^\$/,"");const m=s.match(/^(\d+)(\.\d+)?$/);return m?"$"+m[1].replace(/\B(?=(\d{3})+(?!\d))/g,",")+(m[2]||""):esc(String(a||""));};
+  const convLine=(it,kind)=>{
+    if(it.narrative||(!it.grantor&&!it.grantee))return esc(it.line); // manually-pasted prose stays verbatim
+    const dt=it.recDate?`recorded ${esc(it.recDate)}`:"", dref=docRef(it);
+    const tail=[dt,dref?`in ${dref}`:""].filter(Boolean).join(" ");
+    if(kind==="assignment")return `Assigned${it.grantor?` by ${esc(it.grantor)}`:""} to ${esc(it.grantee||"—")}${tail?`, ${tail}`:""}`;
+    if(kind==="satisfaction")return `Release / satisfaction by ${esc(it.grantor||"—")}${it.grantee?` to ${esc(it.grantee)}`:""}${tail?`, ${tail}`:""}`;
+    return `${it.amount?fmtMoney(it.amount)+" ":""}from ${esc(it.grantor||"—")} to ${esc(it.grantee||"—")}${tail?`, ${tail}`:""}`; // mortgage: grantor=borrower, grantee=lender
+  };
+  const convList=(arr,kind)=>arr.length?`<ul class="cv">${arr.map(it=>{const st=itemStatus(it);const sfx=st?` <b style="color:${st.warn?"#b26a00":"#2e7d32"}">— ${esc(st.txt)}</b>`:"";return `<li ${it.verified?"":'style="color:var(--verify)"'}>${convLine(it,kind)}${sfx}</li>`;}).join("")}</ul>`:`<div style="font-size:11.5px;color:#5a5446">NONE FOUND</div>`;
+  // ---- North-Star search-category checklist: each is a distinct search line; an un-retrieved one
+  // states so honestly rather than showing a bare "NONE FOUND" that would imply a completed search.
+  const lienMatch=re=>M.otherLiens.filter(it=>re.test(it.line));
+  const catSec=(items,note)=>items.length?listHtml(items):`<div style="font-size:11.5px;color:#5a5446">${esc(note)}</div>`;
+  const stateLien=lienMatch(/state (tax )?lien|division of revenue/i);
+  const uccLien=lienMatch(/\bucc\b|financing statement/i);
+  const mechLien=lienMatch(/mechanic/i);
+  const bankruptcy=lienMatch(/bankrupt/i);
+  const miscLiens=M.otherLiens.filter(it=>!/state (tax )?lien|division of revenue|\bucc\b|financing statement|mechanic|bankrupt/i.test(it.line));
   const meta=(label,o)=>`<span class="m"><b>${label}</b><span ${uv(o)?'style="color:var(--verify)"':''}>${o.v?esc(o.v):"—"}</span></span>`;
   const cert = SIGNATURE ? `
     <div class="certblock">I certify that I have reviewed this abstract and that, to the best of my knowledge, it reflects the records examined as of the stated search date.</div>
@@ -721,12 +744,16 @@ function buildReport(){
 
       <div class="sec">CHAIN OF TITLE / DIRECT CONVEYANCES</div>${listHtml(M.chain)}
       ${chainNotesHtml}
-      <div class="sec">MORTGAGES / DEEDS OF TRUST</div>${listHtml(M.mortgages)}${mortSummary}
-      <div class="sec">ASSIGNMENTS</div>${listHtml(M.assignments)}
-      <div class="sec">SATISFACTIONS / RELEASES</div>${listHtml(M.satisfied)}
+      <div class="sec">MORTGAGES / DEEDS OF TRUST</div>${convList(M.mortgages,"mortgage")}${mortSummary}
+      <div class="sec">ASSIGNMENTS</div>${convList(M.assignments,"assignment")}
+      <div class="sec">SATISFACTIONS / RELEASES</div>${convList(M.satisfied,"satisfaction")}
       <div class="sec">JUDGMENTS</div>${listHtml(M.judgments)}
       <div class="sec">FEDERAL TAX LIEN</div>${listHtml(M.federalLien)}
-      <div class="sec">OTHER LIENS / MECHANICS / UCC / NOTICES</div>${listHtml(M.otherLiens)}
+      <div class="sec">STATE TAX LIEN</div>${catSec(stateLien,"Not auto-retrieved — run the Delaware Division of Revenue lien/judgment search manually before delivery.")}
+      <div class="sec">UCC FINANCING STATEMENTS</div>${catSec(uccLien,"Not auto-retrieved — run the DE Department of State / County Recorder UCC index manually before delivery.")}
+      <div class="sec">MECHANICS' LIENS</div>${catSec(mechLien,"Not auto-retrieved — run the Prothonotary / Superior Court mechanics-lien docket manually before delivery.")}
+      <div class="sec">US BANKRUPTCY</div>${catSec(bankruptcy,"Not auto-retrieved — run PACER (U.S. Bankruptcy Court, District of Delaware) manually before delivery.")}
+      <div class="sec">MISCELLANEOUS / OTHER NOTICES</div>${listHtml(miscLiens)}
 
       <div class="sec">TAX STATUS</div>${row("Property Taxes",M.taxStatus.v,uv(M.taxStatus))}
 

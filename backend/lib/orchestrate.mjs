@@ -10,6 +10,7 @@
 import { Session } from "./http.mjs";
 import { lookupParcel } from "./sources/parcel.mjs";
 import { lookupAttom } from "./sources/attom.mjs";
+import { lookupBatchData } from "./sources/batchdata.mjs";
 import { runPipeline } from "../../tools/pipeline.mjs";
 
 const pad = (d) => { const m = (d || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m ? `${m[1].padStart(2,"0")}/${m[2].padStart(2,"0")}/${m[3]}` : (d || ""); };
@@ -18,7 +19,7 @@ const yr = (d) => { const m = (d || "").match(/(\d{4})/); return m ? +m[1] : 0; 
 // normalized record (ATTOM or assessor) -> the four shipped source-zone texts.
 // ATTOM carries explicit grantor/grantee + mortgages; the assessor carries grantee-only
 // deed history (grantor derived from the next-older owner) and no mortgages.
-function recordToZones(addr, r) {
+export function recordToZones(addr, r) {
   const TAB = "\t";
   const deeds = [...(r.deedHistory || [])].sort((a, b) => yr(a.saleDate) - yr(b.saleDate));
   const rows = [["Grantor", "Grantee", "Record Date", "Doc Type", "Instrument", "Amount"].join(TAB)];
@@ -73,12 +74,18 @@ function recordToZones(addr, r) {
   };
 }
 
-// pick the retrieval source: ATTOM (licensed) when keyed, else the live assessor scrape (fallback)
+// pick the retrieval source, best licensed data first, public scrape as the always-on fallback:
+//   BatchData (BATCHDATA_API_TOKEN) -> ATTOM (ATTOM_API_KEY) -> live NCC assessor scrape.
+// Each licensed source falls through on any error (no match, no balance, etc.) so the tool keeps
+// working off the free public source no matter what.
 async function retrieve(address) {
+  if (process.env.BATCHDATA_API_TOKEN) {
+    const b = await lookupBatchData(address);
+    if (!b.error) return b;
+  }
   if (process.env.ATTOM_API_KEY) {
     const a = await lookupAttom(address);
     if (!a.error) return a;
-    // fall through to assessor if ATTOM has no match
   }
   const assessor = await lookupParcel(address, new Session());
   return assessor.error ? { error: assessor.error, candidates: assessor.candidates } : assessor;
@@ -92,7 +99,9 @@ export async function generateReport(address, opts = {}) {
   const { html, model } = runPipeline(store, {
     fileId: opts.fileId || `APX-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`,
     searchDate: SEARCH_DATE,
-    indexDate: rec.source === "attom" ? "Licensed ATTOM property data as of search date" : "Live NCC assessor (Parcel Search) as of search date",
+    indexDate: rec.source === "batchdata" ? "Licensed BatchData property records as of search date"
+      : rec.source === "attom" ? "Licensed ATTOM property data as of search date"
+      : "Live NCC assessor (Parcel Search) as of search date",
   });
   return { ok: true, address, assessor: rec, source: rec.source || "assessor", store, model, html };
 }
