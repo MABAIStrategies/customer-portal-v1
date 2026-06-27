@@ -65,12 +65,12 @@ async function retrieve(address) {
     // fall through to assessor if ATTOM has no match
   }
   const assessor = await lookupParcel(address, new Session());
-  return assessor.error ? { error: assessor.error } : assessor;
+  return assessor.error ? { error: assessor.error, candidates: assessor.candidates } : assessor;
 }
 
 export async function generateReport(address, opts = {}) {
   const rec = await retrieve(address);
-  if (rec.error) return { ok: false, stage: "retrieve", error: rec.error, address };
+  if (rec.error) return { ok: false, stage: "retrieve", error: rec.error, candidates: rec.candidates, address };
   const store = recordToZones(address, rec);
   const SEARCH_DATE = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const { html, model } = runPipeline(store, {
