@@ -1,0 +1,16 @@
+# Render blueprint — one-click deploy of the Apex Phase-1 hosted app.
+# Deploy: https://render.com/deploy?repo=https://github.com/MABAIStrategies/apex-abstracts-v2
+# Render reads this file, builds the Dockerfile, and serves a public https URL.
+services:
+  - type: web
+    name: apex-abstracts
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      # Optional — set in the Render dashboard when available. The app works without them.
+      - key: ATTOM_API_KEY
+        sync: false
+      - key: GDOC_ENDPOINT
+        sync: false
