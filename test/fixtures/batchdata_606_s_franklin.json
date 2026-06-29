@@ -1,37 +1,38 @@
 {
-  "_note": "Representative BatchData property/lookup/all-attributes response for 606 S Franklin St (Blassengale). HAND-BUILT to the documented response shape (results.properties[]) for offline mapping tests — the live account had a zero balance at build time ('Insufficient balance'), so this MUST be replaced with one recorded live response to confirm the exact field paths. Values are the real recorder facts already known from the North-Star and assessor sources. Legal carries only the brief subdivision/lot here (the orchestrator wraps that in the Delaware deed shell); the full metes-and-bounds verbatim path is covered separately in the test.",
-  "status": { "code": 200, "text": "OK" },
-  "results": {
-    "properties": [
-      {
-        "apn": "26-042.10-114",
-        "address": {
-          "street": "606 S Franklin St",
-          "city": "Wilmington",
-          "state": "DE",
-          "zip": "19805",
-          "county": "New Castle",
-          "fips": "10003"
-        },
-        "owner": {
-          "names": ["Acacia Jolene Blassengale"],
-          "mailingAddress": { "street": "606 S Franklin St", "city": "Wilmington", "state": "DE", "zip": "19805" }
-        },
-        "legal": { "subdivision": "WILMINGTON", "lot": "8" },
-        "assessment": { "assessedValue": "45200", "totalValue": "45200" },
-        "deedHistory": [
-          { "grantor": "PROPERTIES 81 LLC", "grantee": "BLASSENGALE, ACACIA JOLENE", "recordingDate": "2023-03-24", "documentNumber": "20230327-0019021", "saleAmount": "215000" },
-          { "grantor": "BRUZDA, LINDA J", "grantee": "PROPERTIES 81 LLC", "recordingDate": "2022-11-23", "documentNumber": "20221128-0109751", "saleAmount": "120000" },
-          { "grantor": "MEW INC", "grantee": "BRUZDA, LINDA J", "recordingDate": "2005-06-24", "documentNumber": "20050629-0064403", "saleAmount": "95000" }
-        ],
-        "mortgages": [
-          { "borrower": "Acacia Jolene Blassengale", "lender": "Keystone Funding, Inc.", "amount": "172812", "recordingDate": "2024-03-27", "documentNumber": "20230327-0019025" },
-          { "borrower": "Acacia Jolene Blassengale", "lender": "Secretary of Housing and Urban Development", "amount": "8453.62", "recordingDate": "2024-10-21", "documentNumber": "20241021-0070907" }
-        ],
-        "liens": [
-          { "type": "Judgment", "plaintiff": "Planet Home Lending, LLC", "amount": "169781.70", "recordingDate": "2026-01-28", "caseNumber": "N26L-01-062" }
-        ]
-      }
+  "_note": "Representative BatchData property record for 606 S Franklin St (Blassengale), built to BatchData's CONFIRMED field schema (from list_property_dataset_fields for core/deed/mortgage-liens). Values are the real recorder facts known from the North-Star + assessor sources. The live account showed 'Insufficient balance' at build time, so a real lookup_property response should still replace this once balance is active — but the field PATHS here are confirmed, not guessed.",
+  "ids": { "apn": "26-042.10-114", "fipsCode": "10003" },
+  "address": { "street": "606 S Franklin St", "city": "Wilmington", "state": "DE", "zip": "19805", "county": "New Castle", "countyFipsCode": "10003", "houseNumber": "606" },
+  "owner": { "fullName": "Acacia Jolene Blassengale", "names": { "first": "Acacia", "middle": "Jolene", "last": "Blassengale", "full": "Acacia Jolene Blassengale" } },
+  "legal": { "legalDescription": "WILMINGTON S FRANKLIN ST", "subdivisionName": "WILMINGTON", "lotNumber": "8" },
+  "assessment": { "totalAssessedValue": 45200, "assessmentYear": 2025, "totalMarketValue": 198000 },
+  "tax": { "taxAmount": 1820, "taxYear": 2025, "taxDelinquentYear": null },
+  "deedHistory": [
+    { "sellers": "PROPERTIES 81 LLC", "buyers": "BLASSENGALE, ACACIA JOLENE", "recordingDate": "2023-03-24", "documentNumber": "20230327-0019021", "recordingBook": "20230327", "recordingPage": "0019021", "salePrice": 215000, "documentType": "Deed" },
+    { "sellers": "BRUZDA, LINDA J", "buyers": "PROPERTIES 81 LLC", "recordingDate": "2022-11-23", "documentNumber": "20221128-0109751", "salePrice": 120000, "documentType": "Deed" },
+    { "sellers": "MEW INC", "buyers": "BRUZDA, LINDA J", "recordingDate": "2005-06-24", "documentNumber": "20050629-0064403", "salePrice": 95000, "documentType": "Deed" }
+  ],
+  "mortgageHistory": [
+    { "borrowers": "Acacia Jolene Blassengale", "lenderName": "Keystone Funding, Inc.", "loanAmount": 172812, "recordingDate": "2024-03-27", "loanType": "Conventional" },
+    { "borrowers": "Acacia Jolene Blassengale", "lenderName": "Secretary of Housing and Urban Development", "loanAmount": 8453.62, "recordingDate": "2024-10-21", "loanType": "FHA" },
+    { "borrowers": "LINDA J BRUZDA", "lenderName": "WSFS Bank", "loanAmount": 96000, "recordingDate": "2005-06-29", "loanType": "Conventional" }
+  ],
+  "openLien": {
+    "totalOpenLienBalance": 178234,
+    "totalOpenLienCount": 2,
+    "mortgages": [
+      { "lenderName": "Keystone Funding, Inc.", "assignedLenderName": "Planet Home Lending, LLC", "loanAmount": 172812, "currentEstimatedBalance": 169781, "recordingDate": "2024-03-27", "loanType": "Conventional" },
+      { "lenderName": "Secretary of Housing and Urban Development", "loanAmount": 8453.62, "recordingDate": "2024-10-21" }
+    ]
+  },
+  "sale": {
+    "lastSale": { "mortgages": [
+      { "lenderName": "Keystone Funding, Inc.", "loanAmount": 172812, "documentNumber": "20230327-0019025", "bookNumber": "20230327", "pageNumber": "0019025", "recordingDate": "2024-03-27" }
+    ] }
+  },
+  "involuntaryLien": {
+    "liens": [
+      { "lienType": "Judgment", "documentType": "Civil Judgment", "judgementAmount": 169781.70, "filingDate": "2026-01-28", "recordingDate": "2026-01-28", "documentNumber": "N26L-01-062",
+        "parties": [ { "fullName": "Planet Home Lending, LLC", "roleType": "Plaintiff" }, { "fullName": "Acacia Jolene Blassengale", "roleType": "Defendant" } ] }
     ]
   }
 }

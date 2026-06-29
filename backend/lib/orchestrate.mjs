@@ -28,9 +28,14 @@ export function recordToZones(addr, r) {
     const instr = d.doc || (d.book ? `Bk ${d.book}/Pg ${d.page}` : "");
     rows.push([grantor, d.grantee, pad(d.saleDate), "Deed", instr, d.amount || ""].join(TAB));
   });
-  // real mortgage rows when the source has them (ATTOM); else an honest "confirm" note
-  const morts = r.mortgages || [];
+  // Mortgage rows. When a source flags which liens are currently open (BatchData openLien),
+  // show those — they're the real liens against title — instead of every historical, paid loan
+  // (which would otherwise read as "open" since aggregators carry no satisfaction records).
+  const allM = r.mortgages || [];
+  const morts = (r.source === "batchdata" && allM.some(m => m.open)) ? allM.filter(m => m.open) : allM;
   morts.forEach(m => rows.push([m.borrower || r.owner, m.lender, pad(m.date), "Mortgage", m.doc || "", m.amount || ""].join(TAB)));
+  // assignments: a BatchData open lien that was assigned to a new holder
+  morts.forEach(m => { if (m.assignedTo) rows.push([m.lender, m.assignedTo, pad(m.date), "Assignment", "", ""].join(TAB)); });
   const isAttom = r.source === "attom";
   // Legal description in the abstractor's vernacular. Aggregator sources (assessor / ATTOM /
   // BatchData) carry only a BRIEF legal (lot/subdivision) — never the full courses-and-distances.
@@ -55,23 +60,28 @@ export function recordToZones(addr, r) {
     legal,
     "",
     rows.join("\n"),
-    morts.length ? "" : `MORTGAGE: no open mortgage found in ${isAttom ? "ATTOM data" : "assessor data"} — confirm against the recorder before delivery.`,
+    morts.length ? "" : `MORTGAGE: no open mortgage found in ${srcLabel} — confirm against the recorder before delivery.`,
   ].filter(Boolean).join("\n");
   const tax = [
     `PARCEL NUMBER: ${r.parcel}`,
     r.assessmentTotal && `ASSESSED VALUE: $${r.assessmentTotal}`,
     `Tax status: ${r.taxStatus}`,
   ].filter(Boolean).join("\n");
-  // Use the recognized section labels so each un-retrieved search surfaces an HONEST disclaimer
-  // in its own report section (never a silent "NONE FOUND", which would imply a completed search).
-  return {
-    recorder, tax,
-    court: "JUDGMENT: civil-judgment search not auto-retrieved — run the Prothonotary / CourtConnect (Superior Court & Court of Common Pleas) search manually before delivery.",
-    statelien: [
+  // Lien/judgment zones: when a source returns real records (BatchData involuntaryLien) emit them
+  // under the recognized section labels; otherwise surface an HONEST "not auto-retrieved" disclaimer
+  // (never a silent "NONE FOUND", which would imply a completed search).
+  const L = r.liens || {};
+  const labeled = (arr, label) => (arr && arr.length) ? arr.map(x => `${label}: ${x}`).join("\n") : "";
+  const court = labeled(L.judgment, "JUDGMENT") ||
+    "JUDGMENT: civil-judgment search not auto-retrieved — run the Prothonotary / CourtConnect (Superior Court & Court of Common Pleas) search manually before delivery.";
+  const statelien = [
+    labeled(L.federal, "FEDERAL TAX LIEN") ||
       "FEDERAL TAX LIEN: not auto-retrieved — run the New Castle County Recorder of Deeds federal tax-lien index manually before delivery.",
+    labeled(L.state, "STATE TAX LIEN") ||
       "STATE TAX LIEN: not auto-retrieved — run the Delaware Division of Revenue lien/judgment search manually before delivery.",
-    ].join("\n"),
-  };
+    labeled(L.mechanics, "MECHANICS LIEN"),
+  ].filter(Boolean).join("\n");
+  return { recorder, tax, court, statelien };
 }
 
 // pick the retrieval source, best licensed data first, public scrape as the always-on fallback:
