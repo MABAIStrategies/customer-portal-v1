@@ -58,10 +58,11 @@ When editing pipeline functions, you are editing `Apex_Title_Studio.html` direct
 ## Backend data flow
 
 ```
-address → orchestrate.mjs retrieve()
+address → orchestrate.mjs retrieve()   (first available wins, each falls through on error)
               │
-              ├─ ATTOM_API_KEY set? → attom.mjs (licensed API)
-              └─ else → parcel.mjs (live NCC assessor scrape, public, no login)
+              ├─ BATCHDATA_API_TOKEN set? → batchdata.mjs (licensed; BatchData MCP lookup_property)
+              ├─ ATTOM_API_KEY set?       → attom.mjs (licensed API)
+              └─ else                     → parcel.mjs (live NCC assessor scrape, public, no login)
               │
               ▼
          recordToZones() → { recorder, tax, court, statelien } (four text blocks)
@@ -90,7 +91,8 @@ Live: https://apex-abstracts.onrender.com (free tier, sleeps after 15 min idle).
 
 | Var | Effect |
 |-----|--------|
-| `ATTOM_API_KEY` | Licensed ATTOM data; activates automatically when set |
+| `BATCHDATA_API_TOKEN` | Licensed BatchData data via the BatchData MCP (`lookup_property`); preferred source, activates automatically when set. Note: BatchData carries a *brief* legal only — no metes-and-bounds and no recorded-deed image, so full courses-and-distances still come from the deed itself (attach it to the client packet). |
+| `ATTOM_API_KEY` | Licensed ATTOM data; used if BatchData isn't set |
 | `GDOC_ENDPOINT` | Apps Script `/exec` URL for one-click Google Doc generation |
 | `PORT` | Server port (default 8787; injected by host) |
 
