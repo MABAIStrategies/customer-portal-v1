@@ -23,6 +23,17 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && req.url === "/report.css")
       return send(res, 200, "text/css", STYLE);
 
+    if (req.method === "GET" && req.url.startsWith("/assets/")) {
+      const safe = path.normalize(req.url).replace(/^(\.\.[/\\])+/, "");
+      const fp = path.join(HERE, "public", safe);
+      if (fs.existsSync(fp)) {
+        const ext = path.extname(fp).slice(1).toLowerCase();
+        const mime = { png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg", webp:"image/webp", svg:"image/svg+xml", ico:"image/x-icon",
+          js:"text/javascript; charset=utf-8", css:"text/css; charset=utf-8", json:"application/json", woff:"font/woff", woff2:"font/woff2" }[ext] || "application/octet-stream";
+        return send(res, 200, mime, fs.readFileSync(fp));
+      }
+    }
+
     if (req.method === "POST" && req.url === "/api/generate") {
       const { address } = JSON.parse((await readBody(req)) || "{}");
       if (!address) return send(res, 400, "application/json", JSON.stringify({ ok: false, error: "address required" }));

@@ -1,0 +1,8 @@
+# Keep the image small and force a clean dependency install.
+**/node_modules
+.git
+.github
+.claude
+demo/address-trials
+backend/out
+*.log

@@ -3,8 +3,8 @@
 // Lifts the deterministic functions/consts straight out of Apex_Title_Studio.html
 // (extractSource → composeNorthStar → reconcile → analyzeChain → buildReport) and the
 // report <style>, then exposes runPipeline(store, opts) → { html, model } plus STYLE and
-// renderPage(). Both the offline address-trial harness (render_report.mjs) and the live
-// scraper backend feed the same four source-zone texts through this single brain.
+// renderPage(). The live scraper backend feeds the four source-zone texts through this
+// single brain, and the test harnesses lift the same functions to verify shipped behavior.
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";

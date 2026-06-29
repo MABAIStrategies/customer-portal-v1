@@ -41,7 +41,6 @@ vendor/pdfjs/            bundled PDF.js (keeps the Studio offline)
 skills/generate-apex-pdf branded-PDF generation skill
 integrations/google-doc  Apps Script + notes for the optional Google-Doc step
 docs/                    TEST_REPORT, ROADMAP, ARCHITECTURE
-archive/                 superseded "customer portal generator" scaffolding (not used)
 ```
 
 ## Develop

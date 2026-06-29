@@ -4,6 +4,7 @@ import { Session, clean } from "../http.mjs";
 
 const URL0 = "https://www3.newcastlede.gov/parcel/search/";
 const P = "ctl00$ctl00$ContentPlaceHolder1$ContentPlaceHolder1$";
+const GRID = "#ctl00_ctl00_ContentPlaceHolder1_ContentPlaceHolder1__GridViewResults tr";
 const SUFFIX = /\b(ST|STREET|AVE|AVENUE|RD|ROAD|DR|DRIVE|LN|LANE|CT|COURT|BLVD|PL|PLACE|WAY|CIR|CIRCLE|TER|TERRACE|PIKE|HWY|HIGHWAY|SQ|ROW)\b\.?/gi;
 
 // "22 Winburne Drive, New Castle DE" -> { number:"22", token:"WINBURNE", city:"NEW CASTLE" }
@@ -78,17 +79,58 @@ function _paced(fn) {
   return run;
 }
 
+// Street-only search (no house number) used to suggest nearby parcels when an exact
+// address doesn't resolve — turns a dead-end "no match" into a "did you mean…" list.
+// (The county filters by exact house number server-side, so a wrong/missing number
+// returns zero rows even when the street is right.)
+async function streetCandidates(session, a) {
+  if (!a.token) return [];
+  const page = await session.get(URL0);
+  const results = await session.postForm(URL0, {
+    [P + "ContainsStartsWith"]: "_RadioButtonStartsWith",
+    [P + "_TextBoxStreetNumber"]: "",
+    [P + "StreetName"]: "_RadioButtonStreetNameContains",
+    [P + "_TextBoxStreetName"]: a.token,
+    [P + "_TextBoxCity"]: "",
+    [P + "_ButtonSearch"]: "Search",
+  }, page);
+  const want = parseInt(a.number, 10) || 0;
+  const seen = new Set(), cands = [];
+  results.$(GRID).each((_, tr) => {
+    const cells = results.$(tr).find("td").map((_, td) => clean(results.$(td).text())).get();
+    const link = results.$(tr).find("a[href*='LinkButtonDetails']").attr("href");
+    if (!link || cells.length < 3) return;
+    const address = cells.find(c => /^\d/.test(c) && new RegExp(a.token, "i").test(c)) || "";
+    if (!address || seen.has(address)) return;
+    seen.add(address);
+    const m = address.match(/^(\d+)/);
+    cands.push({ number: m ? +m[1] : null, address, owner: cells[cells.length - 1] || "", search: address + ", DE" });
+  });
+  // closest house numbers first so the most likely match is at the top
+  cands.sort((x, y) => Math.abs((x.number || 0) - want) - Math.abs((y.number || 0) - want));
+  return cands.slice(0, 8);
+}
+
 // retry the whole lookup with a fresh session if the portal returns an empty/partial
-// result (it occasionally does under rapid sequential requests).
+// result (it occasionally does under rapid sequential requests). When the exact address
+// can't be matched, gather nearby same-street candidates so the caller can suggest them.
 export async function lookupParcel(addr, session) {
   const key = String(addr || "").trim().toUpperCase();
   if (_cache.has(key)) return _cache.get(key);
+  const a = parseAddress(addr);
   const result = await _paced(async () => {
     let last = null;
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt) await new Promise(r => setTimeout(r, 1200 * attempt));
       last = await _lookupOnce(addr, new Session());
       if (!last.error && last.owner && last.parcel) return last;
+      // Exact match failed. Check the street directly (fresh session) before retrying —
+      // if the street resolves, the house number is just wrong and retries won't help,
+      // so return the nearby candidates immediately (also avoids tripping the throttle).
+      try {
+        const cands = await streetCandidates(new Session(), a);
+        if (cands.length) { last.candidates = cands; return last; }
+      } catch (e) { /* candidate lookup is best-effort — never block the error path */ }
     }
     return last;
   });
@@ -98,7 +140,6 @@ export async function lookupParcel(addr, session) {
 
 async function _lookupOnce(addr, session = new Session()) {
   const a = parseAddress(addr);
-  const GRID = "#ctl00_ctl00_ContentPlaceHolder1_ContentPlaceHolder1__GridViewResults tr";
 
   async function attempt(streetMode, name) {
     const page = await session.get(URL0);

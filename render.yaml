@@ -1,0 +1,20 @@
+# Render blueprint — one-click deploy of the Apex Phase-1 hosted app.
+# Deploy: https://render.com/deploy?repo=https://github.com/MABAIStrategies/apex-abstracts-v2
+# Render reads this file, builds the Dockerfile, and serves a public https URL.
+services:
+  - type: web
+    name: apex-abstracts
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      # Optional — set the VALUES in the Render dashboard (kept out of git). The app works without them,
+      # falling back to the free public NCC assessor scrape; set BATCHDATA_API_TOKEN to switch on the
+      # licensed BatchData feed (mortgages, liens, judgments, chain) for Zach's one-click search.
+      - key: BATCHDATA_API_TOKEN
+        sync: false
+      - key: ATTOM_API_KEY
+        sync: false
+      - key: GDOC_ENDPOINT
+        sync: false
