@@ -1,15 +1,15 @@
-// SOURCE — BatchData (licensed; the chosen successor to ATTOM), accessed through BatchData's
-// MCP server. Two parts: mapBatchData() is PURE (unit-tested offline against a fixture built to
-// BatchData's CONFIRMED field schema); lookupBatchData() calls the MCP `lookup_property` tool over
-// a single deterministic JSON-RPC request — NO LLM in the loop, so it fits Zach's one-click search.
+// SOURCE — BatchData (licensed; the chosen successor to ATTOM). Two parts: mapBatchData() is PURE
+// (unit-tested offline against a fixture); lookupBatchData() does ONE deterministic REST POST — no
+// LLM, no OAuth handshake — so it fits Zach's one-click, server-side search.
 //
-// Transport:  POST https://mcp.batchdata.com   (Bearer <BATCHDATA_API_TOKEN>)
-//             body  {jsonrpc, method:"tools/call", params:{name:"lookup_property", arguments:{…}}}
-//             reply Server-Sent-Events: a single `data: {jsonrpc,result|error}` line.
-// Datasets are whatever is enabled for MCP on the account, plus the extras we request.
+// Transport:  POST https://api.batchdata.com/api/v1/property/lookup/all-attributes
+//             header  Authorization: Bearer <BATCHDATA_API_TOKEN>   (the server-side API token)
+//             body    {requests:[{address:{street,city,state,zip}}]}  (or {apn,countyFipsCode})
+//             reply   {status, results:{properties:[ … ]}}
+// (BatchData's MCP exposes the SAME data, but it now gates on interactive OAuth that can't run
+//  unattended; the REST endpoint is the correct machine-to-machine path and was confirmed live.)
 //
-// Field paths below are CONFIRMED from BatchData's own metadata tools (list_property_dataset_fields
-// for core/deed/mortgage-liens), not guessed:
+// Field paths below are CONFIRMED from a live response + BatchData's metadata tools, not guessed:
 //   owner.fullName | owner.names.{first,middle,last,full} · ids.apn · address.* · tax.taxDelinquentYear
 //   legal.legalDescription (BRIEF legal — NOT metes-and-bounds; BatchData has no metes-and-bounds
 //     field and no recorded-deed image, so full courses-and-distances still come from the deed itself)
@@ -19,8 +19,7 @@
 //   involuntaryLien.liens[].{lienType,documentType,judgementAmount,lienAmount,filingDate,recordingDate,
 //     documentNumber,bookNumber,pageNumber,parties[].{fullName,roleType}}
 
-const MCP_URL = "https://mcp.batchdata.com";
-const DATASETS = ["core", "deed", "mortgage-liens", "owner", "valuation"];
+const REST_URL = "https://api.batchdata.com/api/v1/property/lookup/all-attributes";
 
 const clean = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
 const numStr = (v) => (v == null || v === "" ? "" : String(v).replace(/[^0-9.]/g, ""));
@@ -162,40 +161,33 @@ export function mapBatchData(property) {
   };
 }
 
-// ---- MCP transport (deterministic single tool call) ----------------------------------------
+// ---- transport: BatchData REST property lookup (machine-to-machine) -------------------------
+// The one-click search runs on the server, unattended — so it uses the REST endpoint with the
+// server-side API token. (BatchData's MCP exposes the SAME data but now gates on interactive
+// OAuth, which cannot run headless; confirmed live that REST returns the full record set.)
 
-// pull the JSON-RPC result object out of an SSE / JSON MCP reply, then the property record inside it
-function parseMcpProperty(raw) {
-  let rpc = null;
-  for (const line of String(raw || "").split(/\r?\n/)) {
-    const s = line.startsWith("data:") ? line.slice(5).trim() : line.trim();
-    if (!s || s[0] !== "{") continue;
-    try { const o = JSON.parse(s); if (o.result || o.error) { rpc = o; break; } } catch { /* keep scanning */ }
+// when a lookup returns several candidates, prefer the one whose street/number matches the request
+function pickProperty(props, addr) {
+  if (!Array.isArray(props) || !props.length) return null;
+  if (props.length === 1) return props[0];
+  const want = String(addr || "").toLowerCase();
+  const num = (want.match(/^\s*(\d+)/) || [])[1];
+  let best = props[0], bestScore = -1;
+  for (const p of props) {
+    const hn = String(get(p, ["address.houseNumber"]) || "");
+    const st = String(get(p, ["address.street"]) || "").toLowerCase();
+    let sc = 0;
+    if (num && hn === num) sc += 2;
+    if (st && want.includes(st)) sc += 1;
+    if (sc > bestScore) { bestScore = sc; best = p; }
   }
-  if (!rpc) { try { rpc = JSON.parse(raw); } catch { return { error: "unparseable MCP reply" }; } }
-  if (rpc.error) return { error: rpc.error.message || "MCP error" };
-  const r = rpc.result || {};
-  if (r.isError) {
-    const msg = (r.content && r.content[0] && r.content[0].text) || "MCP tool error";
-    return { error: msg };
-  }
-  // payload may be structuredContent, or JSON inside a text content block
-  let payload = r.structuredContent;
-  if (!payload && r.content) {
-    for (const c of r.content) { if (c.type === "text" && c.text) { try { payload = JSON.parse(c.text); break; } catch { payload = c.text; } } }
-  }
-  if (!payload) return { error: "empty MCP result" };
-  const props = get(payload, ["results.properties", "properties"]);
-  if (Array.isArray(props) && props.length) return { property: props[0] };
-  if (payload.property) return { property: payload.property };
-  if (payload.address || payload.deedHistory || payload.ids) return { property: payload };
-  return { error: "no property in MCP result" };
+  return best;
 }
 
-// address "606 S Franklin St, Wilmington, DE 19805" -> MCP lookup_property arguments.
+// address "606 S Franklin St, Wilmington, DE 19805" -> REST request body.
 // Prefers FIPS+APN when the caller already has them (exact match, no address ambiguity).
-function lookupArgs(addr, opts = {}) {
-  if (opts.fips && opts.apn) return { property_county_fips: String(opts.fips), property_apn: String(opts.apn), datasets: DATASETS };
+function lookupBody(addr, opts = {}) {
+  if (opts.fips && opts.apn) return { requests: [{ apn: String(opts.apn), countyFipsCode: String(opts.fips) }] };
   const parts = String(addr || "").split(",").map(s => s.trim()).filter(Boolean);
   const street = parts[0] || "";
   let city = "", state = "", zip = "";
@@ -203,29 +195,28 @@ function lookupArgs(addr, opts = {}) {
   const m = tail.match(/^(.*?)[, ]+([A-Za-z]{2})\s*(\d{5})(?:-\d{4})?$/);
   if (m) { city = m[1].trim(); state = m[2].toUpperCase(); zip = m[3]; }
   else { city = parts[1] || ""; const sz = (parts[2] || tail).match(/([A-Za-z]{2})\s*(\d{5})/); if (sz) { state = sz[1].toUpperCase(); zip = sz[2]; } }
-  return { property_street: street, property_city: city, property_state: state, property_zip: zip, datasets: DATASETS };
+  return { requests: [{ address: { street, city, state, zip } }] };
 }
 
 export async function lookupBatchData(addr, opts = {}, fetchImpl) {
   const token = process.env.BATCHDATA_API_TOKEN;
   if (!token) return { source: "batchdata", error: "BATCHDATA_API_TOKEN not set", address: addr };
-  const body = {
-    jsonrpc: "2.0", id: 1, method: "tools/call",
-    params: { name: "lookup_property", arguments: lookupArgs(addr, opts) },
-  };
-  let raw;
+  let json = null;
   try {
-    const res = await (fetchImpl || fetch)(MCP_URL, {
+    const res = await (fetchImpl || fetch)(REST_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
-      body: JSON.stringify(body),
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(lookupBody(addr, opts)),
     });
-    raw = await res.text();
-    if (!res.ok && !raw) return { source: "batchdata", error: `BatchData MCP HTTP ${res.status}`, address: addr };
+    json = await res.json().catch(() => null);
+    if (!res.ok) {
+      const msg = (json && json.status && (json.status.message || json.status.text)) || `HTTP ${res.status}`;
+      return { source: "batchdata", error: `BatchData: ${msg}`, address: addr };
+    }
   } catch (e) {
-    return { source: "batchdata", error: `BatchData MCP request failed: ${e.message}`, address: addr };
+    return { source: "batchdata", error: `BatchData request failed: ${e.message}`, address: addr };
   }
-  const parsed = parseMcpProperty(raw);
-  if (parsed.error) return { source: "batchdata", error: `BatchData: ${parsed.error}`, address: addr };
-  return { ...mapBatchData(parsed.property), address: addr };
+  const prop = pickProperty(get(json, ["results.properties", "properties"]) || [], addr);
+  if (!prop) return { source: "batchdata", error: "no BatchData match", address: addr };
+  return { ...mapBatchData(prop), address: addr };
 }
