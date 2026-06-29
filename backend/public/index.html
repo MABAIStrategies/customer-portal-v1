@@ -115,6 +115,11 @@
     .actions{grid-column:1;grid-row:5;flex-direction:row;flex-wrap:wrap;border-left:0;border-top:1px solid var(--line);justify-content:flex-end}
     .btn{width:auto}
   }
+  /* client-packet source tray */
+  .sources-tray{margin-top:10px;border:1px dashed var(--line,#2a313b);border-radius:8px;padding:10px 12px;font-size:12.5px}
+  .sources-tray .src-head{font-weight:700;margin-bottom:6px;opacity:.85}
+  .sources-tray .src-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0}
+  .sources-tray .src-x{width:auto;background:none;border:0;color:#d24b4b;cursor:pointer;font-size:13px;line-height:1}
 </style>
 </head>
 <body>
@@ -322,10 +327,14 @@ function renderReview(d) {
     </div>
     <div class="frameWrap"><iframe></iframe></div>
     <div class="review-note">Human-in-the-loop review — items in red need your oversight before this goes to the customer.</div>
+    <div class="sources-tray" data-el="sources" style="display:none"></div>
+    <input type="file" data-el="fileinput" accept="application/pdf,.pdf" multiple style="display:none">
     <div class="docstatus" data-el="docstatus"></div>
     <div class="actions">
       <button class="btn primary" data-act="generate">Generate final</button>
       <button class="btn" data-act="pdf">⬇ Download PDF</button>
+      <button class="btn" data-act="attach">📎 Attach source docs</button>
+      <button class="btn primary" data-act="packet">📦 Build client packet</button>
       <button class="btn" data-act="gdoc"${d.gdocEnabled?"":" disabled title=\"Connect Google Doc in Settings\""}>📄 Google Doc</button>
       <button class="btn ghost" data-act="skip">Skip oversight</button>
       <button class="btn danger" data-act="cancel">Cancel</button>
@@ -347,6 +356,75 @@ function renderReview(d) {
   card.querySelector('[data-act="skip"]').onclick = finalize;
   card.querySelector('[data-act="generate"]').onclick = finalize;
   card.querySelector('[data-act="pdf"]').onclick = finalize;
+
+  // ---- Client packet: Apex summary + attached source documents -> one combined PDF ----
+  const fileInput = card.querySelector('[data-el="fileinput"]');
+  const sourcesTray = card.querySelector('[data-el="sources"]');
+  let sources = [];
+  const renderSources = () => {
+    if (!sources.length) { sourcesTray.style.display = "none"; sourcesTray.innerHTML = ""; return; }
+    sourcesTray.style.display = "block";
+    sourcesTray.innerHTML = `<div class="src-head">Source documents to bundle (${sources.length})</div>` +
+      sources.map((f,i)=>`<div class="src-row"><span>📄 ${esc(f.name)}</span><button class="src-x" data-rm="${i}" title="Remove">✕</button></div>`).join("");
+    sourcesTray.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { sources.splice(+b.dataset.rm,1); renderSources(); });
+  };
+  card.querySelector('[data-act="attach"]').onclick = () => fileInput.click();
+  fileInput.onchange = () => {
+    for (const f of fileInput.files) if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) sources.push(f);
+    fileInput.value = "";
+    renderSources();
+    if (sources.length) docstatus.innerHTML = `<span class="doc-hint">${sources.length} source doc(s) ready — click “Build client packet”.</span>`;
+  };
+
+  const packetBtn = card.querySelector('[data-act="packet"]');
+  packetBtn.onclick = async () => {
+    if (!window.PDFLib || !window.html2pdf) { docstatus.innerHTML = `<span class="doc-err">PDF tools are still loading — try again in a moment.</span>`; return; }
+    const lbl = packetBtn.textContent; packetBtn.disabled = true; packetBtn.innerHTML = '<span class="spinner"></span>Building packet';
+    docstatus.innerHTML = "";
+    try {
+      // 1) render the branded summary report (the iframe doc) to a PDF
+      const body = (iframe.contentDocument || iframe.contentWindow.document).body;
+      const reportPdf = await html2pdf().set({
+        margin: [0.45, 0.45, 0.6, 0.45], image: { type: "jpeg", quality: 0.97 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: body.scrollWidth },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" }, pagebreak: { mode: ["css", "legacy"] },
+      }).from(body).toPdf().get("pdf");
+      const reportBytes = reportPdf.output("arraybuffer");
+
+      // 2) merge: summary pages + a branded divider + each attached source PDF
+      const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+      const outDoc = await PDFDocument.create();
+      const fb = await outDoc.embedFont(StandardFonts.HelveticaBold);
+      const fr = await outDoc.embedFont(StandardFonts.Helvetica);
+      const rep = await PDFDocument.load(reportBytes);
+      for (const p of await outDoc.copyPages(rep, rep.getPageIndices())) outDoc.addPage(p);
+      let embedded = 0; const skipped = [];
+      for (let i = 0; i < sources.length; i++) {
+        const dv = outDoc.addPage([612, 792]);
+        dv.drawRectangle({ x: 0, y: 712, width: 612, height: 80, color: rgb(0.031, 0.055, 0.078) });
+        dv.drawRectangle({ x: 40, y: 740, width: 22, height: 22, color: rgb(0, 0.878, 0.918) });
+        dv.drawText(`SOURCE DOCUMENT ${i + 1}`, { x: 74, y: 752, size: 15, font: fb, color: rgb(1, 1, 1) });
+        dv.drawText("APEX ABSTRACTS · TITLE SEARCH PACKET", { x: 74, y: 724, size: 8, font: fr, color: rgb(0, 0.878, 0.918) });
+        dv.drawText(String(sources[i].name).slice(0, 80), { x: 54, y: 660, size: 13, font: fb, color: rgb(0.05, 0.05, 0.05) });
+        try {
+          const sd = await PDFDocument.load(await sources[i].arrayBuffer(), { ignoreEncryption: true });
+          for (const p of await outDoc.copyPages(sd, sd.getPageIndices())) outDoc.addPage(p);
+          embedded++;
+        } catch (e) {
+          dv.drawText("(Could not embed this file — re-save it as a standard PDF and re-attach.)", { x: 54, y: 632, size: 10, font: fr, color: rgb(0.78, 0, 0) });
+          skipped.push(sources[i].name);
+        }
+      }
+      const bytes = await outDoc.save();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      a.download = "Apex_Title_Packet_" + String(d.address || "property").replace(/[^\w]+/g, "_").slice(0, 48) + ".pdf";
+      a.click(); URL.revokeObjectURL(a.href);
+      docstatus.innerHTML = `<span class="doc-ok">Client packet built</span> — summary report + ${embedded} source document(s)${skipped.length ? ` · ${skipped.length} could not embed` : ""}.`;
+    } catch (e) {
+      docstatus.innerHTML = `<span class="doc-err">Couldn't build the packet: ${esc(e.message)}</span>`;
+    } finally { packetBtn.disabled = false; packetBtn.textContent = lbl; }
+  };
 
   const gbtn = card.querySelector('[data-act="gdoc"]');
   if (gbtn && !gbtn.disabled) {
@@ -378,5 +456,7 @@ function renderReview(d) {
 }
 function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 </script>
+<script src="/assets/vendor/pdf-lib.min.js"></script>
+<script src="/assets/vendor/html2pdf.bundle.min.js"></script>
 </body>
 </html>

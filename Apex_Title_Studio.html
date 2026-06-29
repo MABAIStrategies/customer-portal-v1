@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apex Title Studio</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
   :root{
     /* MAB workspace shell (Modern Stoic Luxury) */
     --bg:#0f1216;--panel:#161a20;--panel-2:#1c2128;--line:#2a313b;--line-soft:#222831;
@@ -13,9 +14,14 @@
     /* Apex report brand (brass + serif) */
     --brass:#8a6d3b;--brass-soft:#b9a06a;--paper:#fff;--paperink:#14110b;
     --verify:#d23b3b;--ok:#2f9e63;--warn:#c9961f;
-    --sans:-apple-system,"Segoe UI","Inter",system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --sans:"Inter",-apple-system,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
     --serif:"Times New Roman",Times,"Liberation Serif",Georgia,serif;
     --mono:"SF Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+    /* Apex Abstracts brand schema (per brand playbook) */
+    --apex-navy:#080E14;--apex-surface:#0E141C;--apex-cyan:#00E0EA;--apex-accent:#005993;
+    --apex-fg:#EFF2F5;--apex-muted:#9299A1;
+    --display:"Space Grotesk","Inter",system-ui,sans-serif;
+    --brandmono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;height:100%}
@@ -109,19 +115,22 @@
   /* ---------- Apex report preview (the North Star) ---------- */
   .reportwrap{display:none;margin-top:6px}
   .reportwrap.show{display:block}
-  .sheet{background:var(--paper);color:var(--paperink);border-radius:6px;border:1px solid #cfc9bb;box-shadow:0 18px 40px rgba(0,0,0,.4);font-family:var(--serif);overflow:hidden}
-  .sheet .rhead{padding:26px 40px 16px;border-bottom:2px solid var(--brass);text-align:center;position:relative}
-  .sheet .rhead .co{font-family:var(--serif);font-weight:700;font-size:22px;letter-spacing:.5px;color:#1a140a}
-  .sheet .rhead .ln1{font-size:11px;color:#6b6557;letter-spacing:1px;margin-top:3px}
-  .sheet .rhead .seal2{position:absolute;left:30px;top:24px;width:46px;height:46px;border-radius:50%;border:2px solid var(--brass-soft);display:grid;place-items:center;font-weight:700;color:var(--brass);font-size:20px}
-  .sheet .rtitle{text-align:center;font-weight:700;letter-spacing:2px;font-size:15px;margin:16px 0 4px}
+  .sheet{background:var(--paper);color:var(--paperink);border-radius:6px;border:1px solid #cfc9bb;box-shadow:0 18px 40px rgba(0,0,0,.4);font-family:var(--sans);overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* Apex-branded letterhead: navy band + cyan logo mark (prints in color) */
+  .sheet .rhead{position:relative;background:var(--apex-navy);background-image:linear-gradient(135deg,#0a121d 0%,#0e1b2a 100%);padding:20px 40px;display:flex;align-items:center;gap:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sheet .rhead .mark{width:38px;height:38px;border-radius:6px;flex:none;position:relative;background:rgba(0,224,234,.18);border:1px solid rgba(0,224,234,.45)}
+  .sheet .rhead .mark::after{content:"";position:absolute;inset:6px;border-radius:3px;background:var(--apex-cyan)}
+  .sheet .rhead .co{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.2px;color:#fff;line-height:1.1}
+  .sheet .rhead .ln1{font-family:var(--brandmono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--apex-cyan);margin-top:4px}
+  .sheet .rhead .tag{margin-left:auto;max-width:220px;text-align:right;font-size:10px;font-style:italic;color:var(--apex-muted);line-height:1.4}
+  .sheet .rtitle{font-family:var(--display);text-align:center;font-weight:600;letter-spacing:3px;font-size:14px;margin:16px 0 4px;color:var(--apex-navy)}
   .sheet .draftband{margin:0 40px 6px;background:#fff3f3;border:1px solid #e3b4b4;color:#9a2323;font-family:var(--sans);font-size:10px;line-height:1.5;padding:8px 11px;border-radius:5px}
   .sheet .body{padding:8px 40px 34px;font-size:12.5px;line-height:1.55}
   .sheet .r{display:flex;gap:8px;padding:3px 0;border-bottom:1px solid #efe9da}
   .sheet .r .k{font-weight:700;min-width:172px;text-transform:uppercase;font-size:11px;letter-spacing:.3px;color:#33302a}
   .sheet .r .v{flex:1}
   .sheet .v.uv{color:var(--verify)}
-  .sheet .sec{font-weight:700;letter-spacing:1px;font-size:12px;margin:14px 0 4px;border-bottom:1px solid #1a140a;padding-bottom:2px}
+  .sheet .sec{font-family:var(--brandmono);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--apex-accent);margin:14px 0 4px;border-bottom:2px solid rgba(0,224,234,.55);padding-bottom:3px}
   .sheet .legal{white-space:pre-wrap;font-size:11.5px;line-height:1.5}
   .sheet ul.cv{margin:4px 0;padding-left:20px;font-size:11.5px}
   .sheet ul.cv li{margin:2px 0}
@@ -136,7 +145,7 @@
   .sheet .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
   .sheet .wm span{font-family:var(--sans);font-weight:800;font-size:150px;letter-spacing:12px;color:rgba(154,47,47,.06);transform:rotate(-28deg);white-space:nowrap}
   .sheet .rhead,.sheet .rtitle,.sheet .draftband,.sheet .rmeta,.sheet .brassrule,.sheet .body,.sheet .certblock,.sheet .sigblock{position:relative;z-index:1}
-  .sheet .brassrule{margin:0 40px;border-top:2px solid var(--brass);border-bottom:1px solid var(--brass-soft);height:3px}
+  .sheet .brassrule{margin:0;border:0;height:3px;background:linear-gradient(90deg,var(--apex-cyan) 0%,var(--apex-accent) 100%);-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .sheet .rmeta{display:flex;flex-wrap:wrap;gap:5px 24px;justify-content:center;margin:10px 40px 2px;font-family:var(--sans);font-size:10px;color:#4a463d}
   .sheet .rmeta .m{display:flex;gap:6px}
   .sheet .rmeta .m b{font-size:8.5px;letter-spacing:.6px;text-transform:uppercase;color:#8a8472;font-weight:700;align-self:center}
@@ -719,9 +728,12 @@ function buildReport(){
   <div class="sheet" id="sheet">
     ${draft?`<div class="wm"><span>DRAFT</span></div>`:""}
     <div class="rhead">
-      <div class="seal2">A</div>
-      <div class="co">Apex Abstracts</div>
-      <div class="ln1">A Title Abstracting Company · New Castle · Kent · Sussex, Delaware</div>
+      <div class="mark"></div>
+      <div class="brandtext">
+        <div class="co">Apex Abstracts</div>
+        <div class="ln1">Title Abstracting · New Castle · Kent · Sussex, Delaware</div>
+      </div>
+      <div class="tag">We make sure your deal is clean before you close.</div>
     </div>
     <div class="brassrule"></div>
     <div class="rtitle">TITLE SEARCH REPORT</div>
