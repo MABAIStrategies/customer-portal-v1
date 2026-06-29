@@ -9,7 +9,11 @@ services:
     plan: free
     healthCheckPath: /
     envVars:
-      # Optional — set in the Render dashboard when available. The app works without them.
+      # Optional — set the VALUES in the Render dashboard (kept out of git). The app works without them,
+      # falling back to the free public NCC assessor scrape; set BATCHDATA_API_TOKEN to switch on the
+      # licensed BatchData feed (mortgages, liens, judgments, chain) for Zach's one-click search.
+      - key: BATCHDATA_API_TOKEN
+        sync: false
       - key: ATTOM_API_KEY
         sync: false
       - key: GDOC_ENDPOINT
